@@ -1,0 +1,6 @@
+{
+  "name": "Token Time-Lock Vault",
+  "description": "Institutional-grade token time-lock vault dashboard and management platform.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
