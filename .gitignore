@@ -1,0 +1,40 @@
+# Dependencies
+node_modules/
+
+# Environment variables / secrets
+.env
+.env.*
+!.env.example
+
+# Hardhat
+cache/
+artifacts/
+coverage/
+
+# Hardhat Ignition
+ignition/deployments/
+
+# TypeScript
+*.tsbuildinfo
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Frontend build files
+Crypto-Vault-frontend/dist/
+Crypto-Vault-frontend/node_modules/
+
+# Frontend environment files
+Crypto-Vault-frontend/.env
+Crypto-Vault-frontend/.env.*
+!Crypto-Vault-frontend/.env.example
