@@ -66,7 +66,7 @@ const MainContent: React.FC = () => {
 
           <div className="flex items-center gap-6 font-mono-numbers text-[11px] text-[#7A7E78]">
             <span>Active Chain: <strong className="text-[#2C332B]">{wallet.network.name}</strong></span>
-            <span>Block: <strong className="text-[#2C332B]">#18,460,219</strong></span>
+            <span>Block: <strong className="text-[#2C332B]">Live Sepolia</strong></span>
           </div>
         </div>
       </footer>

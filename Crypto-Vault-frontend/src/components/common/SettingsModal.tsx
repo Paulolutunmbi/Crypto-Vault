@@ -1,7 +1,7 @@
 import React from 'react';
-import { X, Settings, Globe, Droplets, Check, Shield, Zap } from 'lucide-react';
+import { X, Settings, Globe, Check } from 'lucide-react';
 import { useTimelock } from '../../context/TimelockContext';
-import { SUPPORTED_NETWORKS } from '../../data/mockData';
+import { SEPOLIA_NETWORK } from '../../config/contracts';
 
 export const SettingsModal: React.FC = () => {
   const {
@@ -9,8 +9,6 @@ export const SettingsModal: React.FC = () => {
     setIsSettingsModalOpen,
     wallet,
     switchNetwork,
-    requestFaucet,
-    tokens,
   } = useTimelock();
 
   if (!isSettingsModalOpen) return null;
@@ -33,7 +31,7 @@ export const SettingsModal: React.FC = () => {
             </div>
             <div>
               <h2 className="font-display text-base font-bold text-[#2C332B]">Vault & Network Settings</h2>
-              <p className="text-xs text-[#7A7E78]">Configure chain connection & mock dev parameters</p>
+              <p className="text-xs text-[#7A7E78]">Connect to the deployed Sepolia contracts</p>
             </div>
           </div>
           <button
@@ -50,12 +48,12 @@ export const SettingsModal: React.FC = () => {
             <Globe className="w-3.5 h-3.5 text-[#7D8C7B]" /> Select Network
           </label>
           <div className="flex flex-col gap-1.5">
-            {SUPPORTED_NETWORKS.map(net => {
+            {[SEPOLIA_NETWORK].map(net => {
               const isSelected = wallet.network.id === net.id;
               return (
                 <button
                   key={net.id}
-                  onClick={() => switchNetwork(net)}
+                  onClick={() => void switchNetwork(net)}
                   className={`flex items-center justify-between p-3 rounded-xl border text-xs font-medium transition-all ${
                     isSelected
                       ? 'bg-[#EDF5ED] border-[#7D8C7B] text-[#2C332B] ring-1 ring-[#7D8C7B]'
@@ -73,27 +71,6 @@ export const SettingsModal: React.FC = () => {
                 </button>
               );
             })}
-          </div>
-        </div>
-
-        {/* Faucet / Test Tokens Section */}
-        <div className="flex flex-col gap-2 pt-2 border-t border-[#E2E1D8]">
-          <label className="text-xs font-bold text-[#7A7E78] uppercase tracking-wider flex items-center gap-1.5">
-            <Droplets className="w-3.5 h-3.5 text-[#7D8C7B]" /> Mock Testnet Faucet
-          </label>
-          <p className="text-[11px] text-[#7A7E78]">
-            Need extra tokens to test creating time-locks? Mint test assets to your wallet balance instantly.
-          </p>
-          <div className="grid grid-cols-3 gap-2 mt-1">
-            {tokens.slice(0, 3).map(tok => (
-              <button
-                key={tok.symbol}
-                onClick={() => requestFaucet(tok.symbol)}
-                className="bg-[#F9F9F7] hover:bg-[#F0F1ED] border border-[#E2E1D8] hover:border-[#7D8C7B] text-[#2C332B] text-xs font-semibold py-2 px-2 rounded-lg flex items-center justify-center gap-1 transition-all active:scale-95 shadow-xs"
-              >
-                <span>+ Faucet {tok.symbol}</span>
-              </button>
-            ))}
           </div>
         </div>
 

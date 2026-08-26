@@ -1,11 +1,11 @@
 import React from 'react';
 import { Shield, Clock, CheckCircle2, AlertTriangle, ExternalLink, Vote, ArrowRight } from 'lucide-react';
-import { GOVERNANCE_PROPOSALS } from '../../data/mockData';
 import { formatAddress } from '../../utils/formatters';
 import { useTimelock } from '../../context/TimelockContext';
 
 export const GovernanceView: React.FC = () => {
   const { wallet, addToast } = useTimelock();
+  const GOVERNANCE_PROPOSALS = [];
 
   const handleVote = (propId: string, choice: 'FOR' | 'AGAINST') => {
     addToast({
@@ -42,8 +42,8 @@ export const GovernanceView: React.FC = () => {
             <Shield className="w-4 h-4 text-[#7D8C7B]" />
             <span>Timelock MultiSig Controller</span>
           </div>
-          <div className="font-mono-numbers text-xl font-bold text-[#2C332B] mt-1">4 / 7 Signers</div>
-          <div className="text-xs text-[#7A7E78]">Requires 57% quorum + 48h veto window</div>
+          <div className="font-mono-numbers text-xl font-bold text-[#2C332B] mt-1">Not configured</div>
+          <div className="text-xs text-[#7A7E78]">No governance contract is deployed for this frontend.</div>
         </div>
 
         <div className="glass-card p-5 rounded-xl flex flex-col gap-1.5 shadow-xs">
@@ -51,8 +51,8 @@ export const GovernanceView: React.FC = () => {
             <Clock className="w-4 h-4 text-[#7D8C7B]" />
             <span>Queued Actions</span>
           </div>
-          <div className="font-mono-numbers text-xl font-bold text-[#7D8C7B] mt-1">1 Proposal</div>
-          <div className="text-xs text-[#7A7E78]">Under active timelock delay review</div>
+          <div className="font-mono-numbers text-xl font-bold text-[#7D8C7B] mt-1">0 Proposals</div>
+          <div className="text-xs text-[#7A7E78]">No governance data available.</div>
         </div>
 
         <div className="glass-card p-5 rounded-xl flex flex-col gap-1.5 shadow-xs">
@@ -60,8 +60,8 @@ export const GovernanceView: React.FC = () => {
             <CheckCircle2 className="w-4 h-4 text-[#86B086]" />
             <span>Executed Historic Upgrades</span>
           </div>
-          <div className="font-mono-numbers text-xl font-bold text-[#2C332B] mt-1">28 Transactions</div>
-          <div className="text-xs text-[#7A7E78]">100% on-chain audit transparency</div>
+          <div className="font-mono-numbers text-xl font-bold text-[#2C332B] mt-1">0 Transactions</div>
+          <div className="text-xs text-[#7A7E78]">No governance data available.</div>
         </div>
       </div>
 

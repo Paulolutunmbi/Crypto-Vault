@@ -33,7 +33,7 @@ export const VaultCard: React.FC<VaultCardProps> = ({ lock }) => {
               {lock.tokenName}
             </h3>
             <div className="text-[#7A7E78] text-xs font-mono-numbers mt-0.5 flex items-center gap-1">
-              <span>{formatAddress(lock.vaultAddress, 5, 4)}</span>
+              <span>Lock #{lock.id}</span>
             </div>
           </div>
         </div>

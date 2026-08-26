@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { X, Key, Check, Loader2, ExternalLink, ArrowRight, ShieldCheck } from 'lucide-react';
 import { useTimelock } from '../../context/TimelockContext';
 import { formatAddress, formatTokenAmount } from '../../utils/formatters';
+import { readableError } from '../../utils/readableError';
 
 export const WithdrawModal: React.FC = () => {
   const {
@@ -9,11 +10,18 @@ export const WithdrawModal: React.FC = () => {
     setWithdrawTargetLock,
     withdrawLock,
     wallet,
+    txState,
+    addToast,
+    resetTxState,
   } = useTimelock();
 
   const [isProcessing, setIsProcessing] = useState(false);
   const [step, setStep] = useState<'confirm' | 'withdrawing' | 'success'>('confirm');
   const [txHash, setTxHash] = useState('');
+
+  useEffect(() => {
+    if (txState?.step === 'success' && txState.txHash) setTxHash(txState.txHash);
+  }, [txState]);
 
   if (!withdrawTargetLock) return null;
 
@@ -22,16 +30,12 @@ export const WithdrawModal: React.FC = () => {
       setIsProcessing(true);
       setStep('withdrawing');
       
-      // Simulate Web3 transaction delay
-      await new Promise(r => setTimeout(r, 1500));
-      
       await withdrawLock(withdrawTargetLock.id);
-      
-      const mockHash = '0x' + Array.from({ length: 64 }, () => Math.floor(Math.random() * 16).toString(16)).join('');
-      setTxHash(mockHash);
+      setTxHash(txState?.txHash || '');
       setStep('success');
     } catch (err) {
-      console.error(err);
+      resetTxState();
+      addToast({ type: 'error', ...readableError(err, 'withdraw') });
       setStep('confirm');
     } finally {
       setIsProcessing(false);
@@ -97,16 +101,16 @@ export const WithdrawModal: React.FC = () => {
             {/* Destination & Security Details */}
             <div className="flex flex-col gap-2 text-xs font-mono-numbers bg-[#F9F9F7] p-3.5 rounded-xl border border-[#E2E1D8]">
               <div className="flex justify-between">
-                <span className="text-[#7A7E78]">Beneficiary Address:</span>
-                <span className="text-[#2C332B] font-semibold">{formatAddress(withdrawTargetLock.beneficiary || wallet.address, 6, 4)}</span>
+                <span className="text-[#7A7E78]">Owner Address:</span>
+                <span className="text-[#2C332B] font-semibold">{formatAddress(withdrawTargetLock.owner, 6, 4)}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-[#7A7E78]">Vault Contract:</span>
-                <span className="text-[#2C332B] font-semibold">{formatAddress(withdrawTargetLock.vaultAddress, 6, 4)}</span>
+                <span className="text-[#7A7E78]">Token Contract:</span>
+                <span className="text-[#2C332B] font-semibold">{formatAddress(withdrawTargetLock.tokenAddress, 6, 4)}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-[#7A7E78]">Network Fee (Gas):</span>
-                <span className="text-[#558755] font-semibold">~0.0009 ETH ($2.84)</span>
+                <span className="text-[#558755] font-semibold">Wallet estimate</span>
               </div>
             </div>
 

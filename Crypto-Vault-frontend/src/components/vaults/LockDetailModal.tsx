@@ -22,15 +22,12 @@ export const LockDetailModal: React.FC = () => {
     detailTargetLock,
     setDetailTargetLock,
     setWithdrawTargetLock,
-    extendLock,
     currentTime,
     wallet,
     addToast,
   } = useTimelock();
 
   const [copiedField, setCopiedField] = useState<string | null>(null);
-  const [isExtending, setIsExtending] = useState(false);
-  const [extendDays, setExtendDays] = useState(30);
 
   if (!detailTargetLock) return null;
 
@@ -52,15 +49,9 @@ export const LockDetailModal: React.FC = () => {
     setTimeout(() => setCopiedField(null), 2000);
   };
 
-  const handleExtendSubmit = async () => {
-    const additionalMs = extendDays * 24 * 60 * 60 * 1000;
-    await extendLock(detailTargetLock.id, additionalMs);
-    setIsExtending(false);
-  };
 
   const handleClose = () => {
     setDetailTargetLock(null);
-    setIsExtending(false);
   };
 
   const isLocked = detailTargetLock.status === 'LOCKED';
@@ -162,9 +153,9 @@ export const LockDetailModal: React.FC = () => {
             <div className="p-3 flex items-center justify-between">
               <span className="text-[#7A7E78]">Vault Contract:</span>
               <div className="flex items-center gap-1.5 text-[#2C332B]">
-                <span className="font-semibold">{formatAddress(detailTargetLock.vaultAddress, 8, 6)}</span>
+                <span className="font-semibold">{formatAddress(detailTargetLock.tokenAddress, 8, 6)}</span>
                 <button
-                  onClick={() => handleCopy(detailTargetLock.vaultAddress, 'Vault Address')}
+                  onClick={() => handleCopy(detailTargetLock.tokenAddress, 'Token Address')}
                   className="text-[#7A7E78] hover:text-[#2C332B] p-0.5"
                 >
                   {copiedField === 'Vault Address' ? <Check className="w-3.5 h-3.5 text-[#558755]" /> : <Copy className="w-3.5 h-3.5" />}
@@ -172,16 +163,16 @@ export const LockDetailModal: React.FC = () => {
               </div>
             </div>
 
-            {/* Beneficiary */}
+            {/* Owner */}
             <div className="p-3 flex items-center justify-between">
-              <span className="text-[#7A7E78]">Beneficiary:</span>
+              <span className="text-[#7A7E78]">Owner:</span>
               <div className="flex items-center gap-1.5 text-[#2C332B]">
-                <span className="font-semibold">{formatAddress(detailTargetLock.beneficiary, 8, 6)}</span>
+                <span className="font-semibold">{formatAddress(detailTargetLock.owner, 8, 6)}</span>
                 <button
-                  onClick={() => handleCopy(detailTargetLock.beneficiary, 'Beneficiary')}
+                  onClick={() => handleCopy(detailTargetLock.owner, 'Owner')}
                   className="text-[#7A7E78] hover:text-[#2C332B] p-0.5"
                 >
-                  {copiedField === 'Beneficiary' ? <Check className="w-3.5 h-3.5 text-[#558755]" /> : <Copy className="w-3.5 h-3.5" />}
+                  {copiedField === 'Owner' ? <Check className="w-3.5 h-3.5 text-[#558755]" /> : <Copy className="w-3.5 h-3.5" />}
                 </button>
               </div>
             </div>
@@ -190,12 +181,12 @@ export const LockDetailModal: React.FC = () => {
             <div className="p-3 flex items-center justify-between">
               <span className="text-[#7A7E78]">Creation Tx:</span>
               <a
-                href={`${wallet.network.explorerUrl}/tx/${detailTargetLock.transactionHash}`}
+                href={`${wallet.network.explorerUrl}/tx/${detailTargetLock.creationTxHash || ''}`}
                 target="_blank"
                 rel="noreferrer"
                 className="flex items-center gap-1 text-[#7D8C7B] hover:underline font-semibold"
               >
-                <span>{formatAddress(detailTargetLock.transactionHash, 6, 4)}</span>
+                <span>{formatAddress(detailTargetLock.creationTxHash || '', 6, 4)}</span>
                 <ExternalLink className="w-3 h-3" />
               </a>
             </div>
@@ -203,16 +194,9 @@ export const LockDetailModal: React.FC = () => {
             {/* Block Number */}
             <div className="p-3 flex items-center justify-between">
               <span className="text-[#7A7E78]">Block Number:</span>
-              <span className="text-[#2C332B] font-semibold">#{detailTargetLock.blockNumber}</span>
+              <span className="text-[#2C332B] font-semibold">#{detailTargetLock.creationBlockNumber || '-'}</span>
             </div>
 
-            {/* Memo */}
-            {detailTargetLock.memo && (
-              <div className="p-3 flex items-center justify-between">
-                <span className="text-[#7A7E78]">Schedule Memo:</span>
-                <span className="text-[#2C332B] font-body">{detailTargetLock.memo}</span>
-              </div>
-            )}
           </div>
         </div>
 
@@ -240,50 +224,6 @@ export const LockDetailModal: React.FC = () => {
             </button>
           )}
 
-          {isLocked && !isExtending && (
-            <button
-              onClick={() => setIsExtending(true)}
-              className="w-full bg-[#F0F1ED] hover:bg-[#E2E1D8] text-[#2C332B] border border-[#E2E1D8] font-semibold text-xs py-2.5 rounded-xl transition-colors flex items-center justify-center gap-1.5"
-            >
-              <Clock className="w-3.5 h-3.5 text-[#7D8C7B]" />
-              <span>Extend Timelock Duration</span>
-            </button>
-          )}
-
-          {isExtending && (
-            <div className="p-3.5 rounded-xl bg-[#F9F9F7] border border-[#E2E1D8] flex flex-col gap-3">
-              <span className="text-xs font-bold text-[#2C332B]">Add Extension Period</span>
-              <div className="grid grid-cols-3 gap-2">
-                {[30, 90, 180].map(days => (
-                  <button
-                    key={days}
-                    onClick={() => setExtendDays(days)}
-                    className={`py-1.5 rounded-lg text-xs font-mono-numbers border transition-all ${
-                      extendDays === days
-                        ? 'bg-[#2C332B] text-white border-[#2C332B] shadow-xs'
-                        : 'bg-white border-[#E2E1D8] text-[#7A7E78] hover:border-[#7D8C7B]'
-                    }`}
-                  >
-                    +{days} Days
-                  </button>
-                ))}
-              </div>
-              <div className="flex gap-2 mt-1">
-                <button
-                  onClick={handleExtendSubmit}
-                  className="flex-1 bg-[#2C332B] hover:bg-black text-white text-xs font-semibold py-2 rounded-lg transition-colors shadow-xs"
-                >
-                  Confirm Extension (+{extendDays}d)
-                </button>
-                <button
-                  onClick={() => setIsExtending(false)}
-                  className="px-3 bg-[#F0F1ED] text-[#7A7E78] hover:text-[#2C332B] text-xs rounded-lg transition-colors border border-[#E2E1D8]"
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
-          )}
         </div>
       </div>
     </div>

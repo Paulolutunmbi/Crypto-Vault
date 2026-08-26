@@ -59,7 +59,7 @@ export const ReadyToWithdrawSection: React.FC = () => {
                           {lock.tokenSymbol}
                         </span>
                         <span className="text-[11px] text-[#7A7E78] font-normal block font-body">
-                          {lock.memo || 'Timelock Deposit'}
+                          Lock #{lock.id}
                         </span>
                       </div>
                     </div>
@@ -69,7 +69,7 @@ export const ReadyToWithdrawSection: React.FC = () => {
                   <td className="py-4 px-4 text-[#2C332B] font-semibold">
                     <div>{formatTokenAmount(lock.amount)} {lock.tokenSymbol}</div>
                     <div className="text-[11px] text-[#7A7E78] font-normal font-body">
-                      ≈ ${(lock.amountUsd).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                      On-chain balance
                     </div>
                   </td>
 

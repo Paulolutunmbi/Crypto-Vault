@@ -41,9 +41,8 @@ export const VaultsExplorer: React.FC = () => {
       const q = search.toLowerCase();
       const matchSymbol = lock.tokenSymbol.toLowerCase().includes(q);
       const matchName = lock.tokenName.toLowerCase().includes(q);
-      const matchAddr = lock.vaultAddress.toLowerCase().includes(q);
-      const matchMemo = lock.memo?.toLowerCase().includes(q) || false;
-      return matchSymbol || matchName || matchAddr || matchMemo;
+      const matchAddr = lock.tokenAddress.toLowerCase().includes(q) || lock.owner.toLowerCase().includes(q);
+      return matchSymbol || matchName || matchAddr || lock.id.includes(q);
     }
     return true;
   });
@@ -177,7 +176,7 @@ export const VaultsExplorer: React.FC = () => {
                 <th className="py-3.5 px-4">Locked Amount</th>
                 <th className="py-3.5 px-4">Status</th>
                 <th className="py-3.5 px-4">Unlocks In / On</th>
-                <th className="py-3.5 px-4">Beneficiary</th>
+                <th className="py-3.5 px-4">Owner</th>
                 <th className="py-3.5 px-4 text-right">Action</th>
               </tr>
             </thead>
@@ -198,7 +197,7 @@ export const VaultsExplorer: React.FC = () => {
                         <div>
                           <div className="font-bold text-[#2C332B] text-xs">{lock.tokenName}</div>
                           <div className="text-[11px] text-[#7A7E78] font-normal font-body">
-                            {formatAddress(lock.vaultAddress, 5, 4)}
+                            Lock #{lock.id}
                           </div>
                         </div>
                       </div>
@@ -207,7 +206,7 @@ export const VaultsExplorer: React.FC = () => {
                     <td className="py-3.5 px-4 text-[#2C332B] font-semibold">
                       <div>{formatTokenAmount(lock.amount)} {lock.tokenSymbol}</div>
                       <div className="text-[11px] text-[#7A7E78] font-normal font-body">
-                        ${lock.amountUsd.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                        On-chain balance
                       </div>
                     </td>
 
@@ -235,7 +234,7 @@ export const VaultsExplorer: React.FC = () => {
                     </td>
 
                     <td className="py-3.5 px-4 text-[#7A7E78]">
-                      {formatAddress(lock.beneficiary, 6, 4)}
+                      {formatAddress(lock.owner, 6, 4)}
                     </td>
 
                     <td className="py-3.5 px-4 text-right">

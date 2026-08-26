@@ -18,6 +18,59 @@ async function futureTimestamp(seconds = 3600) {
   return BigInt(await networkHelpers.time.latest()) + BigInt(seconds);
 }
 
+describe("MockToken", function () {
+  it("mints the initial supply to the deployer", async function () {
+    const [deployer] = await ethers.getSigners();
+    const token = await ethers.deployContract("MockToken", [1_000_000n], deployer);
+
+    expect(await token.name()).to.equal("Mock Token");
+    expect(await token.symbol()).to.equal("MTK");
+    expect(await token.decimals()).to.equal(18);
+    expect(await token.balanceOf(deployer.address)).to.equal(1_000_000n * 10n ** 18n);
+    expect(await token.totalSupply()).to.equal(1_000_000n * 10n ** 18n);
+  });
+
+  it("allows a user to claim the correct faucet amount once per cooldown", async function () {
+    const [deployer, userA, userB] = await ethers.getSigners();
+    const token = await ethers.deployContract("MockToken", [1_000_000n], deployer);
+
+    const faucetAmount = await token.FAUCET_AMOUNT();
+    const cooldown = await token.FAUCET_COOLDOWN();
+    expect(faucetAmount).to.equal(1_000n * 10n ** 18n);
+    expect(cooldown).to.equal(24n * 60n * 60n);
+
+    await expect(token.connect(userA).claimFaucet())
+      .to.emit(token, "FaucetClaimed")
+      .withArgs(userA.address, faucetAmount, await networkHelpers.time.latest());
+
+    expect(await token.balanceOf(userA.address)).to.equal(faucetAmount);
+    expect(await token.totalSupply()).to.equal(1_000_000n * 10n ** 18n + faucetAmount);
+
+    await expect(token.connect(userA).claimFaucet())
+      .to.be.revertedWithCustomError(token, "FaucetCooldown");
+
+    const tx = await token.connect(userB).claimFaucet();
+    await tx.wait();
+    expect(await token.balanceOf(userB.address)).to.equal(faucetAmount);
+    expect(await token.totalSupply()).to.equal(1_000_000n * 10n ** 18n + faucetAmount * 2n);
+  });
+
+  it("enforces the per-user faucet cooldown across multiple claims", async function () {
+    const [deployer, user] = await ethers.getSigners();
+    const token = await ethers.deployContract("MockToken", [1_000_000n], deployer);
+
+    await token.connect(user).claimFaucet();
+    const claimAt = await networkHelpers.time.latest();
+
+    await expect(token.connect(user).claimFaucet())
+      .to.be.revertedWithCustomError(token, "FaucetCooldown");
+
+    await networkHelpers.time.increaseTo(claimAt + (await token.FAUCET_COOLDOWN()));
+    await token.connect(user).claimFaucet();
+    expect(await token.balanceOf(user.address)).to.equal((await token.FAUCET_AMOUNT()) * 2n);
+  });
+});
+
 describe("TokenLocker", function () {
   describe("deployment", function () {
     it("stores the fee recipient and protocol fee", async function () {

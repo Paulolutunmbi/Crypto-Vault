@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { useTimelock } from '../../context/TimelockContext';
 import { formatAddress } from '../../utils/formatters';
+import { readableError } from '../../utils/readableError';
 
 export const CreateLockModal: React.FC = () => {
   const {
@@ -22,14 +23,14 @@ export const CreateLockModal: React.FC = () => {
     tokens,
     wallet,
     createLock,
+    addToast,
+    resetTxState,
   } = useTimelock();
 
-  const [selectedTokenSymbol, setSelectedTokenSymbol] = useState('ETH');
+  const [selectedTokenSymbol, setSelectedTokenSymbol] = useState('MTK');
   const [amount, setAmount] = useState('');
   const [durationPreset, setDurationPreset] = useState<'30d' | '90d' | '180d' | '1y' | 'custom'>('90d');
   const [customDate, setCustomDate] = useState('');
-  const [beneficiary, setBeneficiary] = useState(wallet.address || '');
-  const [memo, setMemo] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [txStep, setTxStep] = useState<'form' | 'approving' | 'locking' | 'success'>('form');
   const [createdTxHash, setCreatedTxHash] = useState('');
@@ -77,28 +78,18 @@ export const CreateLockModal: React.FC = () => {
     try {
       setIsSubmitting(true);
 
-      // ERC20 Approval Step Simulation
-      if (currentToken.symbol !== 'ETH') {
-        setTxStep('approving');
-        await new Promise(r => setTimeout(r, 1200));
-      }
-
-      // TimeLock Deposit Step Simulation
       setTxStep('locking');
-      await new Promise(r => setTimeout(r, 1400));
-
       const newLock = await createLock({
         tokenSymbol: currentToken.symbol,
         amount: numAmount,
         unlockTimestamp: targetUnlockMs,
-        beneficiary: beneficiary || wallet.address,
-        memo: memo.trim() || undefined,
       });
 
-      setCreatedTxHash(newLock.transactionHash);
+      setCreatedTxHash(newLock.creationTxHash || '');
       setTxStep('success');
     } catch (err) {
-      console.error(err);
+      resetTxState();
+      addToast({ type: 'error', ...readableError(err, 'create') });
       setTxStep('form');
     } finally {
       setIsSubmitting(false);
@@ -109,7 +100,6 @@ export const CreateLockModal: React.FC = () => {
     setIsCreateModalOpen(false);
     setTxStep('form');
     setAmount('');
-    setMemo('');
   };
 
   return (
@@ -170,7 +160,7 @@ export const CreateLockModal: React.FC = () => {
                     </div>
                     <div className="overflow-hidden">
                       <div className="text-xs font-bold truncate text-[#2C332B]">{tok.symbol}</div>
-                      <div className="text-[10px] text-[#7A7E78] truncate">${tok.priceUsd.toLocaleString()}</div>
+                      <div className="text-[10px] text-[#7A7E78] truncate">On-chain asset</div>
                     </div>
                   </button>
                 ))}
@@ -252,35 +242,6 @@ export const CreateLockModal: React.FC = () => {
               )}
             </div>
 
-            {/* Beneficiary Address */}
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs text-[#7A7E78] font-bold uppercase tracking-wider">Beneficiary Address (Receiver)</label>
-              <input
-                type="text"
-                value={beneficiary}
-                onChange={e => setBeneficiary(e.target.value)}
-                placeholder="0x..."
-                required
-                className="w-full bg-[#F9F9F7] border border-[#E2E1D8] focus:border-[#7D8C7B] rounded-xl px-3.5 py-2.5 text-xs font-mono-numbers text-[#2C332B] outline-none placeholder-[#9CA3AF]"
-              />
-              <span className="text-[11px] text-[#7A7E78]">
-                Defaults to your connected wallet. Tokens can only be unlocked to this address.
-              </span>
-            </div>
-
-            {/* Lock Memo / Purpose */}
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs text-[#7A7E78] font-bold uppercase tracking-wider">Vault Memo / Schedule Label (Optional)</label>
-              <input
-                type="text"
-                value={memo}
-                onChange={e => setMemo(e.target.value)}
-                placeholder="e.g., Core Team Reserve, Treasury Vesting"
-                maxLength={60}
-                className="w-full bg-[#F9F9F7] border border-[#E2E1D8] focus:border-[#7D8C7B] rounded-xl px-3.5 py-2.5 text-xs text-[#2C332B] outline-none placeholder-[#9CA3AF]"
-              />
-            </div>
-
             {/* Summary Box */}
             <div className="bg-[#F9F9F7] border border-[#E2E1D8] rounded-xl p-3.5 flex flex-col gap-2 text-xs">
               <div className="flex justify-between text-[#7A7E78]">
@@ -293,7 +254,7 @@ export const CreateLockModal: React.FC = () => {
               </div>
               <div className="flex justify-between text-[#7A7E78]">
                 <span>Estimated Gas:</span>
-                <span className="text-[#2C332B] font-mono-numbers">~0.0018 ETH ($5.67)</span>
+                <span className="text-[#2C332B] font-mono-numbers">Wallet estimate</span>
               </div>
             </div>
 

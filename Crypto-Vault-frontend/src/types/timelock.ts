@@ -7,29 +7,26 @@ export interface TokenInfo {
   decimals: number;
   iconLetter: string;
   iconBgColor?: string;
-  priceUsd: number;
+  priceUsd?: number;
   userBalance: number;
 }
 
 export interface TimeLock {
   id: string;
-  vaultAddress: string;
+  tokenAddress: string;
   tokenSymbol: string;
   tokenName: string;
   amount: number;
-  amountUsd: number;
+  amountUsd?: number;
   lockedAtTimestamp: number; // unix ms
   unlocksAtTimestamp: number; // unix ms
   lockedDateFormatted: string;
   unlockDateFormatted: string;
   status: LockStatus;
-  beneficiary: string;
-  creator: string;
-  transactionHash: string;
-  blockNumber: number;
-  memo?: string;
-  withdrawnAtTimestamp?: number;
-  withdrawnTxHash?: string;
+  owner: string;
+  withdrawn: boolean;
+  creationTxHash?: string;
+  creationBlockNumber?: number;
 }
 
 export interface TimelockStats {
@@ -59,7 +56,7 @@ export interface WalletState {
   ethBalance: number;
 }
 
-export type TxStep = 'idle' | 'preparing' | 'approving' | 'locking' | 'withdrawing' | 'success' | 'failed';
+export type TxStep = 'idle' | 'preparing' | 'awaitingApproval' | 'approving' | 'locking' | 'withdrawing' | 'success' | 'failed';
 
 export interface TransactionState {
   step: TxStep;

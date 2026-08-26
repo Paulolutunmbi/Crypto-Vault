@@ -35,15 +35,15 @@ contract TokenTimeLockVault is ReentrancyGuard {
         address token;
         uint256 amount;
         uint256 unlockTimestamp;
-        address beneficiary;
+        address owner;
         bool withdrawn;
     }
 
     mapping(uint256 => LockRecord) public locks;
     uint256 public nextLockId;
 
-    event LockCreated(uint256 indexed lockId, address indexed token, uint256 amount, uint256 unlockTimestamp, address indexed beneficiary);
-    event TokensWithdrawn(uint256 indexed lockId, address indexed token, uint256 amount, address indexed beneficiary);
+    event LockCreated(uint256 indexed lockId, address indexed token, address indexed owner, uint256 amount, uint256 unlockTime);
+    event LockWithdrawn(uint256 indexed lockId, address indexed token, address indexed owner, uint256 amount);
 
     function createLock(
         address token,

@@ -1,469 +1,51 @@
-import React, { createContext, useContext, useState, useEffect, useMemo, ReactNode } from 'react';
-import {
-  TimeLock,
-  TokenInfo,
-  NetworkConfig,
-  WalletState,
-  TimelockStats,
-  TransactionState,
-  NotificationItem,
-  LockStatus,
-} from '../types/timelock';
-import {
-  SUPPORTED_NETWORKS,
-  SUPPORTED_TOKENS,
-  INITIAL_ACTIVE_LOCKS,
-  INITIAL_READY_LOCKS,
-  INITIAL_COMPLETED_LOCKS,
-  INITIAL_NOTIFICATIONS,
-} from '../data/mockData';
+import React, { createContext, useContext, useEffect, useMemo, useState, ReactNode } from 'react';
+import { BrowserProvider, Contract, ethers } from 'ethers';
+import { TimeLock, TokenInfo, NetworkConfig, WalletState, TimelockStats, TransactionState, NotificationItem, LockStatus } from '../types/timelock';
+import { ERC20_ABI, MOCK_TOKEN_ADDRESS, PROTOCOL_FEE, SEPOLIA_CHAIN_ID, SEPOLIA_NETWORK, TOKEN_LOCKER_ABI, TOKEN_LOCKER_ADDRESS } from '../config/contracts';
+import { readableError } from '../utils/readableError';
 
-interface ToastState {
-  id: string;
-  type: 'success' | 'info' | 'warning' | 'error';
-  title: string;
-  message?: string;
-}
-
-interface CreateLockParams {
-  tokenSymbol: string;
-  amount: number;
-  unlockTimestamp: number;
-  beneficiary: string;
-  memo?: string;
-}
-
+declare global { interface Window { ethereum?: { request: (args: { method: string; params?: unknown[] }) => Promise<unknown>; on: (event: string, listener: (...args: unknown[]) => void) => void; removeListener: (event: string, listener: (...args: unknown[]) => void) => void; }; } }
+interface ToastState { id: string; type: 'success' | 'info' | 'warning' | 'error'; title: string; message?: string; }
+interface CreateLockParams { tokenSymbol: string; amount: number; unlockTimestamp: number; }
 interface TimelockContextType {
-  // Navigation & UI state
-  activeTab: 'dashboard' | 'vaults' | 'governance' | 'docs';
-  setActiveTab: (tab: 'dashboard' | 'vaults' | 'governance' | 'docs') => void;
-  
-  // Wallet
-  wallet: WalletState;
-  connectWallet: () => void;
-  disconnectWallet: () => void;
-  switchNetwork: (network: NetworkConfig) => void;
-  requestFaucet: (symbol: string) => void;
-
-  // Tokens & Stats
-  tokens: TokenInfo[];
-  stats: TimelockStats;
-  currentTime: number;
-
-  // Locks Data
-  allLocks: TimeLock[];
-  activeLocks: TimeLock[];
-  readyLocks: TimeLock[];
-  completedLocks: TimeLock[];
-
-  // Actions
-  createLock: (params: CreateLockParams) => Promise<TimeLock>;
-  withdrawLock: (lockId: string) => Promise<boolean>;
-  extendLock: (lockId: string, additionalMs: number) => Promise<boolean>;
-
-  // Transaction execution modal state
-  txState: TransactionState | null;
-  resetTxState: () => void;
-
-  // Modal controls
-  isCreateModalOpen: boolean;
-  setIsCreateModalOpen: (open: boolean) => void;
-  withdrawTargetLock: TimeLock | null;
-  setWithdrawTargetLock: (lock: TimeLock | null) => void;
-  detailTargetLock: TimeLock | null;
-  setDetailTargetLock: (lock: TimeLock | null) => void;
-  isSettingsModalOpen: boolean;
-  setIsSettingsModalOpen: (open: boolean) => void;
-  isNotifOpen: boolean;
-  setIsNotifOpen: (open: boolean) => void;
-
-  // Notifications
-  notifications: NotificationItem[];
-  markAllNotificationsRead: () => void;
-  unreadNotifCount: number;
-
-  // Toast
-  toasts: ToastState[];
-  addToast: (toast: Omit<ToastState, 'id'>) => void;
-  removeToast: (id: string) => void;
-
-  // Filtering & Sorting
-  searchQuery: string;
-  setSearchQuery: (query: string) => void;
-  filterStatus: 'ALL' | LockStatus;
-  setFilterStatus: (status: 'ALL' | LockStatus) => void;
-  filterToken: string;
-  setFilterToken: (token: string) => void;
+  activeTab: 'dashboard' | 'vaults' | 'governance' | 'docs'; setActiveTab: (tab: 'dashboard' | 'vaults' | 'governance' | 'docs') => void;
+  wallet: WalletState; connectWallet: () => Promise<void>; disconnectWallet: () => void; switchNetwork: (network: NetworkConfig) => Promise<void>;
+  tokens: TokenInfo[]; stats: TimelockStats; currentTime: number; allLocks: TimeLock[]; activeLocks: TimeLock[]; readyLocks: TimeLock[]; completedLocks: TimeLock[];
+  createLock: (params: CreateLockParams) => Promise<TimeLock>; withdrawLock: (lockId: string) => Promise<boolean>; txState: TransactionState | null; resetTxState: () => void;
+  isCreateModalOpen: boolean; setIsCreateModalOpen: (open: boolean) => void; withdrawTargetLock: TimeLock | null; setWithdrawTargetLock: (lock: TimeLock | null) => void; detailTargetLock: TimeLock | null; setDetailTargetLock: (lock: TimeLock | null) => void; isSettingsModalOpen: boolean; setIsSettingsModalOpen: (open: boolean) => void; isNotifOpen: boolean; setIsNotifOpen: (open: boolean) => void;
+  notifications: NotificationItem[]; markAllNotificationsRead: () => void; unreadNotifCount: number; toasts: ToastState[]; addToast: (toast: Omit<ToastState, 'id'>) => void; removeToast: (id: string) => void;
+  searchQuery: string; setSearchQuery: (query: string) => void; filterStatus: 'ALL' | LockStatus; setFilterStatus: (status: 'ALL' | LockStatus) => void; filterToken: string; setFilterToken: (token: string) => void;
 }
-
 const TimelockContext = createContext<TimelockContextType | undefined>(undefined);
+const network: NetworkConfig = SEPOLIA_NETWORK;
+const tokenTemplate: TokenInfo = { symbol: 'MTK', name: 'Mock Token', address: MOCK_TOKEN_ADDRESS, decimals: 18, iconLetter: 'M', iconBgColor: '#F0F1ED', userBalance: 0 };
+const DISCONNECTED_KEY = 'crypto-vault-wallet-disconnected';
+const MIN_UNLOCK_BUFFER_MS = 2 * 60 * 1000;
 
 export const TimelockProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [activeTab, setActiveTab] = useState<'dashboard' | 'vaults' | 'governance' | 'docs'>('dashboard');
-  const [currentTime, setCurrentTime] = useState<number>(Date.now());
-  const [tokens, setTokens] = useState<TokenInfo[]>(SUPPORTED_TOKENS);
-  
-  // Initial locks combining active, ready, and completed
-  const [locks, setLocks] = useState<TimeLock[]>([
-    ...INITIAL_ACTIVE_LOCKS,
-    ...INITIAL_READY_LOCKS,
-    ...INITIAL_COMPLETED_LOCKS,
-  ]);
-
-  const [wallet, setWallet] = useState<WalletState>({
-    isConnected: true,
-    address: '0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D',
-    network: SUPPORTED_NETWORKS[0],
-    ethBalance: 4.825,
-  });
-
-  const [notifications, setNotifications] = useState<NotificationItem[]>(INITIAL_NOTIFICATIONS);
-  const [toasts, setToasts] = useState<ToastState[]>([]);
-  
-  // Modals & Drawers
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [withdrawTargetLock, setWithdrawTargetLock] = useState<TimeLock | null>(null);
-  const [detailTargetLock, setDetailTargetLock] = useState<TimeLock | null>(null);
-  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
-  const [isNotifOpen, setIsNotifOpen] = useState(false);
-  const [txState, setTxState] = useState<TransactionState | null>(null);
-
-  // Filters
-  const [searchQuery, setSearchQuery] = useState('');
-  const [filterStatus, setFilterStatus] = useState<'ALL' | LockStatus>('ALL');
-  const [filterToken, setFilterToken] = useState('ALL');
-
-  // Real-time ticking interval for precision countdowns
-  useEffect(() => {
-    const timer = setInterval(() => {
-      const now = Date.now();
-      setCurrentTime(now);
-
-      // Check if any LOCKED items have crossed the unlock timestamp
-      setLocks(prevLocks => {
-        let changed = false;
-        const updated = prevLocks.map(item => {
-          if (item.status === 'LOCKED' && now >= item.unlocksAtTimestamp) {
-            changed = true;
-            return { ...item, status: 'READY' as LockStatus };
-          }
-          return item;
-        });
-        return changed ? updated : prevLocks;
-      });
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, []);
-
-  const addToast = (toast: Omit<ToastState, 'id'>) => {
-    const id = 'toast-' + Math.random().toString(36).substring(2, 9);
-    setToasts(prev => [...prev, { ...toast, id }]);
-    setTimeout(() => {
-      removeToast(id);
-    }, 4000);
-  };
-
-  const removeToast = (id: string) => {
-    setToasts(prev => prev.filter(t => t.id !== id));
-  };
-
-  const connectWallet = () => {
-    setWallet(prev => ({
-      ...prev,
-      isConnected: true,
-      address: '0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D',
-    }));
-    addToast({
-      type: 'success',
-      title: 'Wallet Connected',
-      message: 'Connected to 0x7a2...4f9c on Ethereum Mainnet',
-    });
-  };
-
-  const disconnectWallet = () => {
-    setWallet(prev => ({
-      ...prev,
-      isConnected: false,
-    }));
-    addToast({
-      type: 'info',
-      title: 'Wallet Disconnected',
-      message: 'You are viewing the vault in read-only mode.',
-    });
-  };
-
-  const switchNetwork = (network: NetworkConfig) => {
-    setWallet(prev => ({
-      ...prev,
-      network,
-    }));
-    addToast({
-      type: 'success',
-      title: 'Network Switched',
-      message: `Active chain changed to ${network.name}`,
-    });
-  };
-
-  const requestFaucet = (symbol: string) => {
-    setTokens(prev =>
-      prev.map(tok => {
-        if (tok.symbol === symbol) {
-          const addAmount = symbol === 'ETH' ? 2 : symbol === 'USDC' ? 10000 : 100;
-          return { ...tok, userBalance: tok.userBalance + addAmount };
-        }
-        return tok;
-      })
-    );
-    addToast({
-      type: 'success',
-      title: 'Test Tokens Minted',
-      message: `Added test ${symbol} to your connected wallet`,
-    });
-  };
-
-  const resetTxState = () => {
-    setTxState(null);
-  };
-
-  // Create Lock Simulation (Smart Contract approval & deposit)
-  const createLock = async (params: CreateLockParams): Promise<TimeLock> => {
-    const token = tokens.find(t => t.symbol === params.tokenSymbol) || tokens[0];
-    const amountUsd = params.amount * token.priceUsd;
-    const now = Date.now();
-    const unlockDate = new Date(params.unlockTimestamp);
-    const lockDate = new Date(now);
-
-    const formatOptions: Intl.DateTimeFormatOptions = { month: 'short', day: '2-digit', year: 'numeric' };
-    const lockedDateFormatted = lockDate.toLocaleDateString('en-US', formatOptions);
-    const unlockDateFormatted = unlockDate.toLocaleDateString('en-US', formatOptions);
-
-    const newLock: TimeLock = {
-      id: `lock-${Date.now().toString(36)}`,
-      vaultAddress: '0x' + Array.from({ length: 40 }, () => Math.floor(Math.random() * 16).toString(16)).join(''),
-      tokenSymbol: token.symbol,
-      tokenName: `${token.name} (${token.symbol})`,
-      amount: params.amount,
-      amountUsd,
-      lockedAtTimestamp: now,
-      unlocksAtTimestamp: params.unlockTimestamp,
-      lockedDateFormatted,
-      unlockDateFormatted,
-      status: now >= params.unlockTimestamp ? 'READY' : 'LOCKED',
-      beneficiary: params.beneficiary || wallet.address,
-      creator: wallet.address,
-      transactionHash: '0x' + Array.from({ length: 64 }, () => Math.floor(Math.random() * 16).toString(16)).join(''),
-      blockNumber: 18460000 + Math.floor(Math.random() * 1000),
-      memo: params.memo || 'Custom Institutional Time-Lock',
-    };
-
-    // Deduct user balance
-    setTokens(prev =>
-      prev.map(tok => {
-        if (tok.symbol === token.symbol) {
-          return { ...tok, userBalance: Math.max(0, tok.userBalance - params.amount) };
-        }
-        return tok;
-      })
-    );
-
-    setLocks(prev => [newLock, ...prev]);
-
-    // Add notification
-    const newNotif: NotificationItem = {
-      id: `notif-${Date.now()}`,
-      type: 'lock',
-      title: 'Time-Lock Created',
-      message: `Locked ${params.amount.toLocaleString()} ${token.symbol} until ${unlockDateFormatted}`,
-      timestamp: Date.now(),
-      read: false,
-      txHash: newLock.transactionHash,
-    };
-    setNotifications(prev => [newNotif, ...prev]);
-
-    addToast({
-      type: 'success',
-      title: 'Time-Lock Initiated',
-      message: `Successfully locked ${params.amount} ${token.symbol}`,
-    });
-
-    return newLock;
-  };
-
-  // Withdraw simulation
-  const withdrawLock = async (lockId: string): Promise<boolean> => {
-    const lock = locks.find(l => l.id === lockId);
-    if (!lock) return false;
-
-    const txHash = '0x' + Array.from({ length: 64 }, () => Math.floor(Math.random() * 16).toString(16)).join('');
-
-    // Update lock status
-    setLocks(prev =>
-      prev.map(l => {
-        if (l.id === lockId) {
-          return {
-            ...l,
-            status: 'WITHDRAWN' as LockStatus,
-            withdrawnAtTimestamp: Date.now(),
-            withdrawnTxHash: txHash,
-          };
-        }
-        return l;
-      })
-    );
-
-    // Return tokens to wallet balance
-    setTokens(prev =>
-      prev.map(tok => {
-        if (tok.symbol === lock.tokenSymbol) {
-          return { ...tok, userBalance: tok.userBalance + lock.amount };
-        }
-        return tok;
-      })
-    );
-
-    // Add notification
-    const notif: NotificationItem = {
-      id: `notif-${Date.now()}`,
-      type: 'withdraw',
-      title: 'Withdrawal Executed',
-      message: `Withdrew ${lock.amount.toLocaleString()} ${lock.tokenSymbol} to your wallet.`,
-      timestamp: Date.now(),
-      read: false,
-      txHash,
-    };
-    setNotifications(prev => [notif, ...prev]);
-
-    addToast({
-      type: 'success',
-      title: 'Tokens Withdrawn',
-      message: `${lock.amount.toLocaleString()} ${lock.tokenSymbol} transferred to your wallet.`,
-    });
-
-    return true;
-  };
-
-  // Extend lock
-  const extendLock = async (lockId: string, additionalMs: number): Promise<boolean> => {
-    setLocks(prev =>
-      prev.map(l => {
-        if (l.id === lockId) {
-          const newUnlock = l.unlocksAtTimestamp + additionalMs;
-          const unlockDate = new Date(newUnlock);
-          const formatOptions: Intl.DateTimeFormatOptions = { month: 'short', day: '2-digit', year: 'numeric' };
-          return {
-            ...l,
-            unlocksAtTimestamp: newUnlock,
-            unlockDateFormatted: unlockDate.toLocaleDateString('en-US', formatOptions),
-            status: 'LOCKED' as LockStatus,
-          };
-        }
-        return l;
-      })
-    );
-
-    addToast({
-      type: 'info',
-      title: 'Lock Extended',
-      message: `Timelock duration successfully extended.`,
-    });
-
-    return true;
-  };
-
-  const markAllNotificationsRead = () => {
-    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
-  };
-
-  const unreadNotifCount = useMemo(() => {
-    return notifications.filter(n => !n.read).length;
-  }, [notifications]);
-
-  // Derived categorized locks
-  const activeLocks = useMemo(() => {
-    return locks.filter(l => l.status === 'LOCKED');
-  }, [locks]);
-
-  const readyLocks = useMemo(() => {
-    return locks.filter(l => l.status === 'READY');
-  }, [locks]);
-
-  const completedLocks = useMemo(() => {
-    return locks.filter(l => l.status === 'WITHDRAWN');
-  }, [locks]);
-
-  // High level metrics
-  const stats: TimelockStats = useMemo(() => {
-    const totalLockedUsd = activeLocks.reduce((acc, l) => acc + l.amountUsd, 0);
-    const readyToWithdrawUsd = readyLocks.reduce((acc, l) => acc + l.amountUsd, 0);
-    const uniqueAssets = new Set(activeLocks.map(l => l.tokenSymbol)).size;
-
-    return {
-      totalLockedUsd: totalLockedUsd > 0 ? totalLockedUsd : 1240000,
-      totalLockedChangeWeek: 2.4,
-      activeLocksCount: activeLocks.length,
-      assetsCount: uniqueAssets || 4,
-      readyToWithdrawUsd: readyToWithdrawUsd > 0 ? readyToWithdrawUsd : 45200,
-      readyToWithdrawCount: readyLocks.length,
-      completedLocksCount: 104 + completedLocks.length - INITIAL_COMPLETED_LOCKS.length,
-    };
-  }, [activeLocks, readyLocks, completedLocks]);
-
-  return (
-    <TimelockContext.Provider
-      value={{
-        activeTab,
-        setActiveTab,
-        wallet,
-        connectWallet,
-        disconnectWallet,
-        switchNetwork,
-        requestFaucet,
-        tokens,
-        stats,
-        currentTime,
-        allLocks: locks,
-        activeLocks,
-        readyLocks,
-        completedLocks,
-        createLock,
-        withdrawLock,
-        extendLock,
-        txState,
-        resetTxState,
-        isCreateModalOpen,
-        setIsCreateModalOpen,
-        withdrawTargetLock,
-        setWithdrawTargetLock,
-        detailTargetLock,
-        setDetailTargetLock,
-        isSettingsModalOpen,
-        setIsSettingsModalOpen,
-        isNotifOpen,
-        setIsNotifOpen,
-        notifications,
-        markAllNotificationsRead,
-        unreadNotifCount,
-        toasts,
-        addToast,
-        removeToast,
-        searchQuery,
-        setSearchQuery,
-        filterStatus,
-        setFilterStatus,
-        filterToken,
-        setFilterToken,
-      }}
-    >
-      {children}
-    </TimelockContext.Provider>
-  );
+  const [currentTime, setCurrentTime] = useState(Date.now());
+  const [wallet, setWallet] = useState<WalletState>({ isConnected: false, address: '', network, ethBalance: 0 });
+  const [tokens, setTokens] = useState<TokenInfo[]>([tokenTemplate]); const [locks, setLocks] = useState<TimeLock[]>([]); const [notifications, setNotifications] = useState<NotificationItem[]>([]); const [toasts, setToasts] = useState<ToastState[]>([]); const [txState, setTxState] = useState<TransactionState | null>(null);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false); const [withdrawTargetLock, setWithdrawTargetLock] = useState<TimeLock | null>(null); const [detailTargetLock, setDetailTargetLock] = useState<TimeLock | null>(null); const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false); const [isNotifOpen, setIsNotifOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState(''); const [filterStatus, setFilterStatus] = useState<'ALL' | LockStatus>('ALL'); const [filterToken, setFilterToken] = useState('ALL');
+  const refreshId = React.useRef(0);
+  const walletRef = React.useRef(wallet);
+  useEffect(() => { walletRef.current = wallet; }, [wallet]);
+  const addToast = (toast: Omit<ToastState, 'id'>) => { const id = `toast-${Date.now()}`; setToasts(prev => [...prev, { ...toast, id }]); window.setTimeout(() => setToasts(prev => prev.filter(item => item.id !== id)), 4000); };
+  const removeToast = (id: string) => setToasts(prev => prev.filter(item => item.id !== id)); const resetTxState = () => setTxState(null); const getProvider = () => window.ethereum ? new BrowserProvider(window.ethereum as never) : null;
+  const clearWalletState = () => { refreshId.current += 1; setWallet({ isConnected: false, address: '', network, ethBalance: 0 }); setLocks([]); setTokens([{ ...tokenTemplate, userBalance: 0 }]); setTxState(null); };
+  const refreshChainState = async (address: string, chainId = SEPOLIA_CHAIN_ID) => { const requestId = ++refreshId.current; const provider = getProvider(); if (!provider || chainId !== SEPOLIA_CHAIN_ID) return; const ethBalance = Number(ethers.formatEther(await provider.getBalance(address))); const token = new Contract(MOCK_TOKEN_ADDRESS, ERC20_ABI, provider); const balance = Number(ethers.formatUnits(await token.balanceOf(address), tokenTemplate.decimals)); const locker = new Contract(TOKEN_LOCKER_ADDRESS, TOKEN_LOCKER_ABI, provider); const ids = await locker.getUserLocks(address) as bigint[]; const block = await provider.getBlock('latest'); const now = Number(block?.timestamp ?? Math.floor(Date.now() / 1000)); const loaded = await Promise.all(ids.map(async id => { const item = await locker.getLock(id); const tokenContract = new Contract(item.token, ERC20_ABI, provider); let symbol = 'TOKEN'; let name = item.token; try { symbol = await tokenContract.symbol(); name = await tokenContract.name(); } catch { /* token metadata is optional */ } const decimals = Number(await tokenContract.decimals().catch(() => 18)); const unlock = Number(item.unlockTime) * 1000; return { id: item.id.toString(), tokenAddress: item.token, tokenSymbol: symbol, tokenName: name, amount: Number(ethers.formatUnits(item.amount, decimals)), amountUsd: 0, lockedAtTimestamp: Date.now(), unlocksAtTimestamp: unlock, lockedDateFormatted: new Date().toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }), unlockDateFormatted: new Date(unlock).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }), status: item.withdrawn ? 'WITHDRAWN' : now >= Number(item.unlockTime) ? 'READY' : 'LOCKED', owner: item.owner, withdrawn: item.withdrawn } as TimeLock; })); if (requestId !== refreshId.current) return; setWallet(prev => prev.address.toLowerCase() === address.toLowerCase() ? { ...prev, ethBalance } : prev); setTokens([{ ...tokenTemplate, userBalance: balance }]); setLocks(loaded); };
+  const setWrongNetwork = (chainId: number, address: string) => { refreshId.current += 1; setWallet({ isConnected: true, address, network: { ...network, name: `Wrong Network (${chainId})`, chainId }, ethBalance: 0 }); setTokens([{ ...tokenTemplate, userBalance: 0 }]); setLocks([]); };
+  const handleChain = async (address: string) => { const provider = getProvider(); if (!provider) return; const chainId = Number(await provider.send('eth_chainId', [])); if (chainId !== SEPOLIA_CHAIN_ID) { setWrongNetwork(chainId, address); addToast({ type: 'warning', title: 'Wrong network', message: 'Please switch your wallet back to Ethereum Sepolia.' }); return; } setWallet(prev => ({ ...prev, isConnected: true, address, network, ethBalance: 0 })); try { await refreshChainState(address, chainId); } catch (error) { addToast({ type: 'error', ...readableError(error) }); } };
+  const connectWallet = async () => { if (!window.ethereum) { addToast({ type: 'error', ...readableError(new Error('Wallet not installed'), 'connect') }); return; } try { const provider = getProvider()!; const accounts = await provider.send('eth_requestAccounts', []) as string[]; if (!accounts[0]) return; localStorage.removeItem(DISCONNECTED_KEY); await handleChain(accounts[0]); addToast({ type: 'success', title: 'Wallet Connected', message: `Connected to ${accounts[0].slice(0, 6)}...${accounts[0].slice(-4)}` }); } catch (error) { addToast({ type: 'error', ...readableError(error, 'connect') }); } };
+  const disconnectWallet = () => { localStorage.setItem(DISCONNECTED_KEY, 'true'); clearWalletState(); };
+  const switchNetwork = async () => { if (!window.ethereum) { addToast({ type: 'error', ...readableError(new Error('Wallet not installed'), 'switch') }); return; } try { await window.ethereum.request({ method: 'wallet_switchEthereumChain', params: [{ chainId: '0xaa36a7' }] }); } catch (error) { addToast({ type: 'error', ...readableError(error, 'switch') }); } };
+  useEffect(() => { const timer = window.setInterval(() => setCurrentTime(Date.now()), 1000); return () => window.clearInterval(timer); }, []);
+  useEffect(() => { if (!window.ethereum) return; const onAccounts = (...args: unknown[]) => { const accounts = args[0] as string[]; if (!accounts?.length) { clearWalletState(); return; } if (localStorage.getItem(DISCONNECTED_KEY) === 'true' && !walletRef.current.isConnected) return; void handleChain(accounts[0]); }; const onChain = (...args: unknown[]) => { const chainId = Number(args[0]); const currentWallet = walletRef.current; if (!currentWallet.isConnected || !currentWallet.address) return; if (chainId !== SEPOLIA_CHAIN_ID) setWrongNetwork(chainId, currentWallet.address); else void handleChain(currentWallet.address); }; window.ethereum.on('accountsChanged', onAccounts); window.ethereum.on('chainChanged', onChain); void (async () => { if (localStorage.getItem(DISCONNECTED_KEY) === 'true') return; const provider = getProvider(); if (!provider) return; const accounts = await provider.send('eth_accounts', []) as string[]; if (accounts[0]) void handleChain(accounts[0]); })(); return () => { window.ethereum?.removeListener('accountsChanged', onAccounts); window.ethereum?.removeListener('chainChanged', onChain); }; }, []);
+  const createLock = async ({ tokenSymbol, amount, unlockTimestamp }: CreateLockParams) => { if (!wallet.isConnected || wallet.network.chainId !== SEPOLIA_CHAIN_ID) throw new Error('wrong network'); if (tokenSymbol !== 'MTK') throw new Error('invalid token'); if (!Number.isFinite(amount) || amount <= 0) throw new Error('invalid amount'); if (unlockTimestamp - Date.now() < MIN_UNLOCK_BUFFER_MS) throw new Error('unlock time too close'); const provider = getProvider(); if (!provider) throw new Error('wallet not installed'); const signer = await provider.getSigner(); const token = new Contract(MOCK_TOKEN_ADDRESS, ERC20_ABI, signer); const locker = new Contract(TOKEN_LOCKER_ADDRESS, TOKEN_LOCKER_ABI, signer); const rawAmount = ethers.parseUnits(amount.toString(), tokenTemplate.decimals); if (await token.balanceOf(wallet.address) < rawAmount) throw new Error('insufficient MTK balance'); if (await token.allowance(wallet.address, TOKEN_LOCKER_ADDRESS) < rawAmount) { setTxState({ step: 'approving', title: 'Approve MTK', description: 'Waiting for wallet confirmation...' }); const approval = await token.approve(TOKEN_LOCKER_ADDRESS, rawAmount); setTxState({ step: 'approving', title: 'Approve MTK', description: 'Transaction pending...', txHash: approval.hash }); await approval.wait(); } if (unlockTimestamp - Date.now() < MIN_UNLOCK_BUFFER_MS) { setTxState(null); throw new Error('unlock time too close'); } setTxState({ step: 'locking', title: 'Create time-lock', description: 'Waiting for wallet confirmation...' }); const transaction = await locker.createLock(MOCK_TOKEN_ADDRESS, rawAmount, Math.floor(unlockTimestamp / 1000), { value: PROTOCOL_FEE }); setTxState({ step: 'locking', title: 'Create time-lock', description: 'Transaction pending...', txHash: transaction.hash }); const receipt = await transaction.wait(); await refreshChainState(wallet.address); const created = { id: 'pending', tokenAddress: MOCK_TOKEN_ADDRESS, tokenSymbol: 'MTK', tokenName: 'Mock Token', amount, amountUsd: 0, lockedAtTimestamp: Date.now(), unlocksAtTimestamp: unlockTimestamp, lockedDateFormatted: new Date().toLocaleDateString(), unlockDateFormatted: new Date(unlockTimestamp).toLocaleDateString(), status: 'LOCKED' as LockStatus, owner: wallet.address, withdrawn: false, creationTxHash: transaction.hash, creationBlockNumber: receipt?.blockNumber }; setTxState({ step: 'success', title: 'Transaction confirmed', description: 'Time-lock created.', txHash: transaction.hash }); addToast({ type: 'success', title: 'Time-Lock Created', message: `${amount} MTK locked on Sepolia.` }); setNotifications(prev => [{ id: `lock-${transaction.hash}`, type: 'lock', title: 'Time-Lock Created', message: `${amount} MTK locked`, timestamp: Date.now(), read: false, txHash: transaction.hash }, ...prev]); return created; };
+  const withdrawLock = async (lockId: string) => { const lock = locks.find(item => item.id === lockId); if (!lock || lock.owner.toLowerCase() !== wallet.address.toLowerCase() || lock.withdrawn || lock.unlocksAtTimestamp > Date.now()) throw new Error('withdrawal unavailable'); const provider = getProvider(); if (!provider) throw new Error('wallet not installed'); const locker = new Contract(TOKEN_LOCKER_ADDRESS, TOKEN_LOCKER_ABI, await provider.getSigner()); setTxState({ step: 'withdrawing', title: 'Withdraw tokens', description: 'Waiting for wallet confirmation...' }); const transaction = await locker.withdraw(lockId); setTxState({ step: 'withdrawing', title: 'Withdraw tokens', description: 'Transaction pending...', txHash: transaction.hash }); await transaction.wait(); await refreshChainState(wallet.address); setTxState({ step: 'success', title: 'Transaction confirmed', description: 'Tokens withdrawn.', txHash: transaction.hash }); addToast({ type: 'success', title: 'Tokens Withdrawn', message: `${lock.amount} ${lock.tokenSymbol} transferred to your wallet.` }); return true; };
+  const activeLocks = useMemo(() => locks.filter(lock => lock.status === 'LOCKED'), [locks]); const readyLocks = useMemo(() => locks.filter(lock => lock.status === 'READY'), [locks]); const completedLocks = useMemo(() => locks.filter(lock => lock.status === 'WITHDRAWN'), [locks]); const stats = useMemo(() => ({ totalLockedUsd: 0, totalLockedChangeWeek: 0, activeLocksCount: activeLocks.length, assetsCount: new Set(activeLocks.map(lock => lock.tokenAddress.toLowerCase())).size, readyToWithdrawUsd: 0, readyToWithdrawCount: readyLocks.length, completedLocksCount: completedLocks.length }), [activeLocks, readyLocks, completedLocks]); const unreadNotifCount = notifications.filter(item => !item.read).length;
+  return <TimelockContext.Provider value={{ activeTab, setActiveTab, wallet, connectWallet, disconnectWallet, switchNetwork, tokens, stats, currentTime, allLocks: locks, activeLocks, readyLocks, completedLocks, createLock, withdrawLock, txState, resetTxState, isCreateModalOpen, setIsCreateModalOpen, withdrawTargetLock, setWithdrawTargetLock, detailTargetLock, setDetailTargetLock, isSettingsModalOpen, setIsSettingsModalOpen, isNotifOpen, setIsNotifOpen, notifications, markAllNotificationsRead: () => setNotifications(prev => prev.map(item => ({ ...item, read: true })),), unreadNotifCount, toasts, addToast, removeToast, searchQuery, setSearchQuery, filterStatus, setFilterStatus, filterToken, setFilterToken }}>{children}</TimelockContext.Provider>;
 };
-
-export const useTimelock = (): TimelockContextType => {
-  const context = useContext(TimelockContext);
-  if (!context) {
-    throw new Error('useTimelock must be used within a TimelockProvider');
-  }
-  return context;
-};
+export const useTimelock = () => { const context = useContext(TimelockContext); if (!context) throw new Error('useTimelock must be used within a TimelockProvider'); return context; };
