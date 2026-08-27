@@ -15,7 +15,7 @@ export const SettingsModal: React.FC = () => {
     setNotificationsEnabled,
     setNotificationSoundEnabled,
   } = useTimelock();
-  const { canInstall, isInstalled, install } = useInstallPrompt();
+  const { canInstall, isInstalled, install, isIos, isUnavailable, installRequested } = useInstallPrompt();
 
   if (!isSettingsModalOpen) return null;
 
@@ -94,13 +94,19 @@ export const SettingsModal: React.FC = () => {
         <div className="flex flex-col gap-2 border-t border-[#E2E1D8] pt-4">
           <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#7A7E78]"><Smartphone className="w-4 h-4 text-[#7D8C7B]" /> App Installation</div>
           {isInstalled ? (
-            <p className="text-xs font-semibold text-[#558755]">Crypto-Vault is installed</p>
+            <p className="text-xs font-semibold text-[#558755]">App Installed</p>
           ) : canInstall ? (
             <button type="button" onClick={() => void install()} className="flex items-center justify-center gap-2 rounded-xl bg-[#2C332B] px-4 py-2.5 text-xs font-semibold text-white hover:bg-black">
-              <Download className="w-4 h-4" /> Install App
+              <Download className="w-4 h-4" /> Install Veridian
             </button>
+          ) : isIos ? (
+            <p className="text-xs leading-relaxed text-[#7A7E78]">To install Veridian, use Share &rarr; Add to Home Screen.</p>
+          ) : installRequested ? (
+            <p className="text-xs leading-relaxed text-[#7A7E78]">Installation request sent. Complete the prompt to install Veridian.</p>
+          ) : isUnavailable ? (
+            <p className="text-xs leading-relaxed text-[#7A7E78]">Installation is not currently available in this browser.</p>
           ) : (
-            <p className="text-xs leading-relaxed text-[#7A7E78]">Installation may require your browser&apos;s menu. Choose <span className="font-semibold text-[#2C332B]">Install app</span> or <span className="font-semibold text-[#2C332B]">Add to Home Screen</span> when offered.</p>
+            <p className="text-xs leading-relaxed text-[#7A7E78]">Checking installation availability...</p>
           )}
         </div>
 

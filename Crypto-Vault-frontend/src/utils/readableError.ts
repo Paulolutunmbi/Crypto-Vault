@@ -74,7 +74,7 @@ export function readableError(error: unknown, operation: 'connect' | 'detect' | 
     return { title: 'Sepolia provider unavailable', message: 'Unable to reach the Sepolia RPC provider. Try again shortly.' };
   }
   if (/wallet not found|wallet not installed|metamask/i.test(text) && /not found|not installed|missing/i.test(text)) {
-    return { title: 'Wallet not installed', message: 'Install MetaMask or another browser wallet to continue.' };
+    return { title: 'Wallet unavailable', message: 'Connect a compatible wallet app or browser extension to continue.' };
   }
   if (/disconnected|no accounts|not connected/i.test(text)) {
     return { title: 'Wallet disconnected', message: 'Connect your wallet again to continue.' };
@@ -101,7 +101,7 @@ export function readableError(error: unknown, operation: 'connect' | 'detect' | 
     return { title: operation === 'withdraw' ? 'Withdrawal failed' : 'Lock could not be created', message: 'The smart contract rejected this request. Check the details and try again.' };
   }
 
-  if (operation === 'connect') return { title: 'Connection failed', message: 'We could not connect your wallet. Try again from MetaMask.' };
+  if (operation === 'connect') return { title: 'Connection failed', message: 'We could not connect your wallet. Check your wallet app or browser extension and try again.' };
   if (operation === 'withdraw') return { title: 'Withdrawal failed', message: 'The withdrawal could not be completed. Check your wallet and try again.' };
   if (operation === 'faucet') return { title: 'HMT claim failed', message: 'The HMT faucet could not complete this request. Check your wallet and try again.' };
   return { title: 'Lock could not be created', message: 'The transaction could not be completed. Check your wallet and try again.' };

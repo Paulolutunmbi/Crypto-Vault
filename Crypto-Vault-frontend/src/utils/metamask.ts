@@ -1,8 +1,11 @@
+import { getWalletProvider } from './walletProvider';
+
 export async function addTokenToWallet(address: string, symbol: string, decimals: number, image?: string): Promise<boolean> {
-  if (!window.ethereum) return false;
+  const provider = getWalletProvider();
+  if (!provider) return false;
 
   try {
-    const result = await window.ethereum.request({
+    const result = await provider.request({
       method: 'wallet_watchAsset',
       params: {
         type: 'ERC20',

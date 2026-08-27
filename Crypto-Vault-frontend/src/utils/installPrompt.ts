@@ -8,10 +8,14 @@ interface BeforeInstallPromptEvent extends Event {
 const isStandalone = () => window.matchMedia('(display-mode: standalone)').matches
   || Boolean((navigator as Navigator & { standalone?: boolean }).standalone);
 
+const isIosDevice = () => /iPad|iPhone|iPod/.test(navigator.userAgent)
+  || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
 export function useInstallPrompt() {
   const [installEvent, setInstallEvent] = useState<BeforeInstallPromptEvent | null>(null);
   const [isInstalled, setIsInstalled] = useState(isStandalone);
   const [installRequested, setInstallRequested] = useState(false);
+  const [isIos] = useState(isIosDevice);
 
   useEffect(() => {
     const handleBeforeInstallPrompt = (event: Event) => {
@@ -45,6 +49,8 @@ export function useInstallPrompt() {
     canInstall: Boolean(installEvent) && !isInstalled && !installRequested,
     isInstalled,
     install,
-    manualInstall: !installEvent && !isInstalled && !installRequested,
+    isIos,
+    isUnavailable: !installEvent && !isInstalled && !isIos && !installRequested,
+    installRequested,
   };
 }

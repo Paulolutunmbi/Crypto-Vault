@@ -7,7 +7,7 @@ export const GreetingSection: React.FC = () => {
 
   // Dynamic greeting based on current local time
   const hour = new Date().getHours();
-  const greeting = hour < 12 ? 'Good morning,' : hour < 18 ? 'Good afternoon,' : 'Good evening,';
+  const greeting = hour < 12 ? 'Good morning 👋' : hour < 18 ? 'Good afternoon 👋' : 'Good evening 👋';
 
   return (
     <section className="flex flex-col md:flex-row md:items-end justify-between gap-4">

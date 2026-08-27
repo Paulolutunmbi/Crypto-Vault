@@ -8,15 +8,18 @@ export default defineConfig({
   plugins: [react(), tailwindcss(), VitePWA({
     registerType: 'autoUpdate',
     manifest: {
-      name: 'Crypto-Vault',
-      short_name: 'Crypto-Vault',
+      name: 'Veridian Token Time-Lock Vault',
+      short_name: 'Veridian',
       description: 'Non-custodial blockchain time-lock vaults.',
       display: 'standalone',
       start_url: '/',
       scope: '/',
       theme_color: '#2C332B',
       background_color: '#F7F6F2',
-      icons: [],
+      icons: [
+        { src: '/veridian-icon.svg', sizes: '192x192', type: 'image/svg+xml', purpose: 'any maskable' },
+        { src: '/veridian-icon.svg', sizes: '512x512', type: 'image/svg+xml', purpose: 'any maskable' },
+      ],
     },
     workbox: {
       globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],

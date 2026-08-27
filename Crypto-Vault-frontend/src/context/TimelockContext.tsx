@@ -22,16 +22,7 @@ import {
 } from '../config/contracts';
 import { readableError } from '../utils/readableError';
 import { detectToken as detectErc20Token } from '../utils/tokenDetection';
-
-declare global {
-  interface Window {
-    ethereum?: {
-      request: (args: { method: string; params?: unknown }) => Promise<unknown>;
-      on: (event: string, listener: (...args: unknown[]) => void) => void;
-      removeListener: (event: string, listener: (...args: unknown[]) => void) => void;
-    };
-  }
-}
+import { getWalletProvider } from '../utils/walletProvider';
 
 interface ToastState {
   id: string;
@@ -170,7 +161,10 @@ export const TimelockProvider: React.FC<{ children: ReactNode }> = ({ children }
 
   const removeToast = (id: string) => setToasts(prev => prev.filter(item => item.id !== id));
   const resetTxState = () => setTxState(null);
-  const getProvider = () => (window.ethereum ? new BrowserProvider(window.ethereum as never) : null);
+  const getProvider = () => {
+    const injectedProvider = getWalletProvider();
+    return injectedProvider ? new BrowserProvider(injectedProvider as never) : null;
+  };
 
   const playNotificationSound = () => {
     if (!notificationSoundEnabled || !interactedRef.current) return;
@@ -317,7 +311,7 @@ export const TimelockProvider: React.FC<{ children: ReactNode }> = ({ children }
   };
 
   const connectWallet = async () => {
-    if (!window.ethereum) {
+    if (!getWalletProvider()) {
       addToast({ type: 'error', ...readableError(new Error('Wallet not installed'), 'connect') });
       return;
     }
@@ -351,13 +345,14 @@ export const TimelockProvider: React.FC<{ children: ReactNode }> = ({ children }
   };
 
   const switchNetwork = async () => {
-    if (!window.ethereum) {
+    const injectedProvider = getWalletProvider();
+    if (!injectedProvider) {
       addToast({ type: 'error', ...readableError(new Error('Wallet not installed'), 'switch') });
       return;
     }
 
     try {
-      await window.ethereum.request({ method: 'wallet_switchEthereumChain', params: [{ chainId: '0xaa36a7' }] });
+      await injectedProvider.request({ method: 'wallet_switchEthereumChain', params: [{ chainId: '0xaa36a7' }] });
     } catch (error) {
       addToast({ type: 'error', ...readableError(error, 'switch') });
     }
@@ -440,7 +435,8 @@ export const TimelockProvider: React.FC<{ children: ReactNode }> = ({ children }
   useEffect(() => { localStorage.setItem(NOTIFICATION_SOUND_KEY, String(notificationSoundEnabled)); }, [notificationSoundEnabled]);
 
   useEffect(() => {
-    if (!window.ethereum) return;
+    const injectedProvider = getWalletProvider();
+    if (!injectedProvider) return;
 
     const onAccounts = (...args: unknown[]) => {
       const accounts = args[0] as string[];
@@ -460,8 +456,8 @@ export const TimelockProvider: React.FC<{ children: ReactNode }> = ({ children }
       else void handleChain(currentWallet.address);
     };
 
-    window.ethereum.on('accountsChanged', onAccounts);
-    window.ethereum.on('chainChanged', onChain);
+    injectedProvider.on('accountsChanged', onAccounts);
+    injectedProvider.on('chainChanged', onChain);
 
     void (async () => {
       if (localStorage.getItem(DISCONNECTED_KEY) === 'true') return;
@@ -472,8 +468,8 @@ export const TimelockProvider: React.FC<{ children: ReactNode }> = ({ children }
     })();
 
     return () => {
-      window.ethereum?.removeListener('accountsChanged', onAccounts);
-      window.ethereum?.removeListener('chainChanged', onChain);
+      injectedProvider.removeListener('accountsChanged', onAccounts);
+      injectedProvider.removeListener('chainChanged', onChain);
     };
   }, []);
 

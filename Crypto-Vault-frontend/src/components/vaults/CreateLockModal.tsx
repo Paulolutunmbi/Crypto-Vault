@@ -16,6 +16,7 @@ import { useTimelock } from '../../context/TimelockContext';
 import { formatAddress } from '../../utils/formatters';
 import { readableError } from '../../utils/readableError';
 import { addTokenToWallet } from '../../utils/metamask';
+import { getWalletProvider } from '../../utils/walletProvider';
 
 export const CreateLockModal: React.FC = () => {
   const {
@@ -126,7 +127,7 @@ export const CreateLockModal: React.FC = () => {
   };
 
   const handleAddTokenToMetaMask = async () => {
-    if (!window.ethereum) {
+    if (!getWalletProvider()) {
       addToast({ type: 'warning', title: 'Wallet feature unavailable', message: 'This wallet does not support adding tokens automatically.' });
       return;
     }
@@ -248,7 +249,7 @@ export const CreateLockModal: React.FC = () => {
                     <span className="font-semibold">Contract</span><span className="font-mono-numbers break-all">{formatAddress(currentToken.address, 8, 6)}</span>
                   </div>
                   <button type="button" onClick={() => void handleAddTokenToMetaMask()} disabled={isWatchingToken} className="self-start rounded-md border border-[#CDE2CD] bg-white px-2.5 py-1.5 font-semibold text-[#2C332B] disabled:opacity-50">
-                    {isWatchingToken ? 'Adding...' : 'Add to MetaMask'}
+                    {isWatchingToken ? 'Adding...' : 'Add to Wallet'}
                   </button>
                 </div>
               )}

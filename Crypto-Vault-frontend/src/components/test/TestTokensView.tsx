@@ -3,6 +3,7 @@ import { AlertCircle, Check, Copy, ExternalLink, Loader2, Shield, Sparkles, Wall
 import { HUMBLE_TOKEN_ADDRESS, SEPOLIA_CHAIN_ID } from '../../config/contracts';
 import { useTimelock } from '../../context/TimelockContext';
 import { addTokenToWallet } from '../../utils/metamask';
+import { getWalletProvider } from '../../utils/walletProvider';
 import { readableError } from '../../utils/readableError';
 
 export const TestTokensView: React.FC = () => {
@@ -50,8 +51,8 @@ export const TestTokensView: React.FC = () => {
   };
 
   const handleAddToMetaMask = async () => {
-    if (!window.ethereum) {
-      addToast({ type: 'warning', title: 'MetaMask unavailable', message: 'Install MetaMask in your browser to add HMT to your wallet.' });
+    if (!getWalletProvider()) {
+      addToast({ type: 'warning', title: 'Wallet unavailable', message: 'Connect a compatible wallet app or browser extension to add HMT.' });
       return;
     }
 
@@ -65,9 +66,9 @@ export const TestTokensView: React.FC = () => {
       const token = tokens.find(item => item.address.toLowerCase() === HUMBLE_TOKEN_ADDRESS.toLowerCase());
       const added = await addTokenToWallet(HUMBLE_TOKEN_ADDRESS, 'HMT', token?.decimals ?? 18);
       if (added) {
-        addToast({ type: 'success', title: 'HMT added', message: 'Humble Token has been added to MetaMask.' });
+        addToast({ type: 'success', title: 'HMT added', message: 'Humble Token has been added to your wallet.' });
       } else {
-        addToast({ type: 'error', title: 'MetaMask rejected', message: 'The wallet request was rejected, so HMT was not added.' });
+        addToast({ type: 'error', title: 'Wallet rejected', message: 'The wallet request was rejected, so HMT was not added.' });
       }
     } catch (error) {
       addToast({ type: 'error', ...readableError(error, 'connect') });
@@ -153,11 +154,11 @@ export const TestTokensView: React.FC = () => {
           <button
             type="button"
             onClick={handleAddToMetaMask}
-            disabled={!window.ethereum || !HUMBLE_TOKEN_ADDRESS || watchingAsset}
+            disabled={!getWalletProvider() || !HUMBLE_TOKEN_ADDRESS || watchingAsset}
             className="inline-flex items-center justify-center gap-2 bg-[#2C332B] hover:bg-black text-white text-sm font-semibold rounded-xl px-4 py-2.5 disabled:opacity-60 disabled:cursor-not-allowed"
           >
             {watchingAsset ? <Loader2 className="w-4 h-4 animate-spin" /> : <Shield className="w-4 h-4" />}
-            {watchingAsset ? 'Adding...' : (window.ethereum ? 'Add HMT to MetaMask' : 'MetaMask unavailable')}
+            {watchingAsset ? 'Adding...' : (getWalletProvider() ? 'Add HMT to Wallet' : 'Wallet unavailable')}
           </button>
         </div>
       </div>
