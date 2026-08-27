@@ -3,6 +3,7 @@
 /* eslint-disable */
 import type * as testHelpersSol from './TestHelpers.sol/index.js';
 export type { testHelpersSol };
+export type { HumbleToken } from './HumbleToken.js';
 export type { MockToken } from './MockToken.js';
 export type { TokenLocker } from './TokenLocker.js';
 export * as factories from './factories/index.js';
@@ -16,3 +17,4 @@ export { ITokenLocker__factory } from './factories/TestHelpers.sol/ITokenLocker_
 export type { ReentrantFeeRecipient } from './TestHelpers.sol/ReentrantFeeRecipient.js';
 export { ReentrantFeeRecipient__factory } from './factories/TestHelpers.sol/ReentrantFeeRecipient__factory.js';
 export { TokenLocker__factory } from './factories/TokenLocker__factory.js';
+export { HumbleToken__factory } from './factories/HumbleToken__factory.js';

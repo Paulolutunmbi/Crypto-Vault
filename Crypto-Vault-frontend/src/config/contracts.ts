@@ -2,7 +2,7 @@ import { ethers } from 'ethers';
 
 export const SEPOLIA_CHAIN_ID = 11155111;
 export const TOKEN_LOCKER_ADDRESS = (import.meta.env.VITE_TOKEN_LOCKER_ADDRESS ?? '').trim();
-export const MOCK_TOKEN_ADDRESS = (import.meta.env.VITE_MOCK_TOKEN_ADDRESS ?? '').trim();
+export const HUMBLE_TOKEN_ADDRESS = (import.meta.env.VITE_HUMBLE_TOKEN_ADDRESS ?? '').trim();
 export const SEPOLIA_RPC_URL = (import.meta.env.VITE_SEPOLIA_RPC_URL ?? '').trim();
 export const PROTOCOL_FEE = ethers.parseEther('0.0001');
 
@@ -26,7 +26,8 @@ export const TOKEN_LOCKER_ABI = [
   'event LockWithdrawn(uint256 indexed lockId, address indexed token, address indexed owner, uint256 amount)',
 ];
 
-export const MOCK_TOKEN_ABI = [
+export const HUMBLE_TOKEN_ABI = [
+  'function lastClaimAt(address) view returns (uint256)',
   'function claimFaucet()',
   'function FAUCET_AMOUNT() view returns (uint256)',
   'function FAUCET_COOLDOWN() view returns (uint256)',

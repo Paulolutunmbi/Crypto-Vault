@@ -72,6 +72,22 @@ describe("MockToken", function () {
   });
 });
 
+describe("HumbleToken", function () {
+  it("uses HMT metadata and exposes the faucet claim timestamp", async function () {
+    const [deployer, user] = await ethers.getSigners();
+    const token = await ethers.deployContract("HumbleToken", [1_000_000n], deployer);
+
+    expect(await token.name()).to.equal("Humble Token");
+    expect(await token.symbol()).to.equal("HMT");
+    expect(await token.decimals()).to.equal(18);
+    expect(await token.lastClaimAt(user.address)).to.equal(0n);
+
+    await token.connect(user).claimFaucet();
+    expect(await token.lastClaimAt(user.address)).to.be.greaterThan(0n);
+    expect(await token.balanceOf(user.address)).to.equal(await token.FAUCET_AMOUNT());
+  });
+});
+
 describe("TokenLocker", function () {
   describe("deployment", function () {
     it("stores the fee recipient and protocol fee", async function () {

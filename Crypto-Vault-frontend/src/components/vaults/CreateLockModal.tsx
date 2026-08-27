@@ -29,7 +29,7 @@ export const CreateLockModal: React.FC = () => {
     resetTxState,
   } = useTimelock();
 
-  const [selectedTokenAddress, setSelectedTokenAddress] = useState(tokens.find(token => token.symbol === 'MTK')?.address ?? '');
+  const [selectedTokenAddress, setSelectedTokenAddress] = useState(tokens.find(token => token.symbol === 'HMT')?.address ?? '');
   const [customAddress, setCustomAddress] = useState('');
   const [isAddingCustomToken, setIsAddingCustomToken] = useState(false);
   const [isDetectingToken, setIsDetectingToken] = useState(false);
@@ -83,7 +83,7 @@ export const CreateLockModal: React.FC = () => {
       setAmount('');
       addToast({ type: 'success', title: 'Token detected', message: `${token.name} (${token.symbol}), ${token.decimals} decimals.` });
     } catch (error) {
-      addToast({ type: 'error', ...readableError(error, 'create') });
+      addToast({ type: 'error', ...readableError(error, 'detect') });
     } finally {
       setIsDetectingToken(false);
     }

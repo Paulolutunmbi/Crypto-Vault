@@ -91,18 +91,18 @@ export const SettingsModal: React.FC = () => {
           </div>
         </div>
 
-        {!isInstalled && (
-          <div className="flex flex-col gap-2 border-t border-[#E2E1D8] pt-4">
-            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#7A7E78]"><Smartphone className="w-4 h-4 text-[#7D8C7B]" /> App Installation</div>
-            {canInstall ? (
-              <button type="button" onClick={() => void install()} className="flex items-center justify-center gap-2 rounded-xl bg-[#2C332B] px-4 py-2.5 text-xs font-semibold text-white hover:bg-black">
-                <Download className="w-4 h-4" /> Install Crypto-Vault
-              </button>
-            ) : (
-              <p className="text-xs leading-relaxed text-[#7A7E78]">Installation isn&apos;t available in this browser right now. Use your browser&apos;s menu and choose <span className="font-semibold text-[#2C332B]">Install app</span> or <span className="font-semibold text-[#2C332B]">Add to Home Screen</span> when offered.</p>
-            )}
-          </div>
-        )}
+        <div className="flex flex-col gap-2 border-t border-[#E2E1D8] pt-4">
+          <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#7A7E78]"><Smartphone className="w-4 h-4 text-[#7D8C7B]" /> App Installation</div>
+          {isInstalled ? (
+            <p className="text-xs font-semibold text-[#558755]">Crypto-Vault is installed</p>
+          ) : canInstall ? (
+            <button type="button" onClick={() => void install()} className="flex items-center justify-center gap-2 rounded-xl bg-[#2C332B] px-4 py-2.5 text-xs font-semibold text-white hover:bg-black">
+              <Download className="w-4 h-4" /> Install App
+            </button>
+          ) : (
+            <p className="text-xs leading-relaxed text-[#7A7E78]">Installation may require your browser&apos;s menu. Choose <span className="font-semibold text-[#2C332B]">Install app</span> or <span className="font-semibold text-[#2C332B]">Add to Home Screen</span> when offered.</p>
+          )}
+        </div>
 
         <button
           onClick={() => setIsSettingsModalOpen(false)}

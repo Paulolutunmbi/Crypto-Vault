@@ -29,6 +29,8 @@ export const Header: React.FC = () => {
     setIsNotifOpen,
     unreadNotifCount,
     addToast,
+    verifyWalletOwnership,
+    walletVerified,
   } = useTimelock();
 
   const [isWalletMenuOpen, setIsWalletMenuOpen] = useState(false);
@@ -218,6 +220,15 @@ export const Header: React.FC = () => {
                       </div>
 
                       <div className="pt-2 border-t border-[#E2E1D8] flex flex-col gap-2">
+                        <button
+                          type="button"
+                          onClick={() => void verifyWalletOwnership()}
+                          disabled={walletVerified}
+                          className="w-full text-center text-xs py-2 rounded-lg bg-[#EDF5ED] hover:bg-[#D2E8D2] text-[#2C332B] border border-[#CDE2CD] font-medium transition-colors disabled:opacity-70"
+                        >
+                          <Shield className="mr-1.5 inline-block w-3.5 h-3.5" />
+                          {walletVerified ? 'Wallet ownership verified' : 'Verify wallet ownership'}
+                        </button>
                         <a
                           href={`${wallet.network.explorerUrl}/address/${wallet.address}`}
                           target="_blank"

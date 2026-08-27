@@ -2,5 +2,6 @@
 /* tslint:disable */
 /* eslint-disable */
 export * as testHelpersSol from './TestHelpers.sol/index.js';
+export { HumbleToken__factory } from './HumbleToken__factory.js';
 export { MockToken__factory } from './MockToken__factory.js';
 export { TokenLocker__factory } from './TokenLocker__factory.js';

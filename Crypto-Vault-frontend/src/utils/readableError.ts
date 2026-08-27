@@ -28,7 +28,7 @@ const getErrorDetails = (error: unknown): string => {
   }
 };
 
-export function readableError(error: unknown, operation: 'connect' | 'create' | 'withdraw' | 'faucet' | 'switch' = 'create'): ReadableBlockchainError {
+export function readableError(error: unknown, operation: 'connect' | 'detect' | 'create' | 'withdraw' | 'faucet' | 'switch' = 'create'): ReadableBlockchainError {
   const candidate = (error && typeof error === 'object' ? error : {}) as ErrorLike;
   const text = getErrorText(error);
   const code = String(candidate.code ?? '');
@@ -67,6 +67,9 @@ export function readableError(error: unknown, operation: 'connect' | 'create' | 
   if (/allowance read failed/i.test(text)) {
     return { title: 'Token allowance unavailable', message: 'The token allowance could not be read from Sepolia.' };
   }
+  if (operation === 'detect') {
+    return { title: 'Token detection failed', message: 'The contract could not be verified as a usable ERC-20 token on Sepolia.' };
+  }
   if (/rpc provider unavailable/i.test(text)) {
     return { title: 'Sepolia provider unavailable', message: 'Unable to reach the Sepolia RPC provider. Try again shortly.' };
   }
@@ -77,7 +80,7 @@ export function readableError(error: unknown, operation: 'connect' | 'create' | 
     return { title: 'Wallet disconnected', message: 'Connect your wallet again to continue.' };
   }
   if (operation === 'faucet' && /faucetcooldown|faucet cooldown|cooldown|ec442f05/i.test(details)) {
-    return { title: 'MTK claim unavailable', message: 'You have already claimed MTK recently. Please wait until the faucet cooldown expires.' };
+    return { title: 'HMT claim unavailable', message: 'You have already claimed HMT recently. Please wait until the faucet cooldown expires.' };
   }
   if (/network|rpc|provider|timeout|could not detect network|failed to fetch/i.test(text)) {
     return { title: 'Blockchain unavailable', message: 'The network is temporarily unavailable. Check your wallet connection and try again.' };
@@ -94,12 +97,12 @@ export function readableError(error: unknown, operation: 'connect' | 'create' | 
     return { title: 'Invalid amount', message: 'Enter a token amount greater than zero.' };
   }
   if (/contract|revert|execution reverted|call exception/i.test(text)) {
-    if (operation === 'faucet') return { title: 'MTK claim failed', message: 'The MTK faucet could not complete this request. Check your wallet and try again.' };
+    if (operation === 'faucet') return { title: 'HMT claim failed', message: 'The HMT faucet could not complete this request. Check your wallet and try again.' };
     return { title: operation === 'withdraw' ? 'Withdrawal failed' : 'Lock could not be created', message: 'The smart contract rejected this request. Check the details and try again.' };
   }
 
   if (operation === 'connect') return { title: 'Connection failed', message: 'We could not connect your wallet. Try again from MetaMask.' };
   if (operation === 'withdraw') return { title: 'Withdrawal failed', message: 'The withdrawal could not be completed. Check your wallet and try again.' };
-  if (operation === 'faucet') return { title: 'MTK claim failed', message: 'The MTK faucet could not complete this request. Check your wallet and try again.' };
+  if (operation === 'faucet') return { title: 'HMT claim failed', message: 'The HMT faucet could not complete this request. Check your wallet and try again.' };
   return { title: 'Lock could not be created', message: 'The transaction could not be completed. Check your wallet and try again.' };
 }

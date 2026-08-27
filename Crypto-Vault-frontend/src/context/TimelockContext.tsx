@@ -12,8 +12,8 @@ import {
 } from '../types/timelock';
 import {
   ERC20_ABI,
-  MOCK_TOKEN_ABI,
-  MOCK_TOKEN_ADDRESS,
+  HUMBLE_TOKEN_ABI,
+  HUMBLE_TOKEN_ADDRESS,
   PROTOCOL_FEE,
   SEPOLIA_CHAIN_ID,
   SEPOLIA_NETWORK,
@@ -57,12 +57,17 @@ interface TimelockContextType {
   detectToken: (address: string) => Promise<TokenInfo>;
   stats: TimelockStats;
   currentTime: number;
+  chainTimeOffset: number;
   allLocks: TimeLock[];
   activeLocks: TimeLock[];
   readyLocks: TimeLock[];
   completedLocks: TimeLock[];
   createLock: (params: CreateLockParams) => Promise<TimeLock>;
   claimFaucet: () => Promise<void>;
+  faucetNextAvailableAt: number | null;
+  faucetCooldownSeconds: number | null;
+  verifyWalletOwnership: () => Promise<void>;
+  walletVerified: boolean;
   withdrawLock: (lockId: string) => Promise<boolean>;
   txState: TransactionState | null;
   resetTxState: () => void;
@@ -97,11 +102,11 @@ interface TimelockContextType {
 const TimelockContext = createContext<TimelockContextType | undefined>(undefined);
 const network: NetworkConfig = SEPOLIA_NETWORK;
 const tokenTemplate: TokenInfo = {
-  symbol: 'MTK',
-  name: 'Mock Token',
-  address: MOCK_TOKEN_ADDRESS,
+  symbol: 'HMT',
+  name: 'Humble Token',
+  address: HUMBLE_TOKEN_ADDRESS,
   decimals: 18,
-  iconLetter: 'M',
+  iconLetter: 'H',
   iconBgColor: '#F0F1ED',
   userBalance: '0',
 };
@@ -117,6 +122,9 @@ export const TimelockProvider: React.FC<{ children: ReactNode }> = ({ children }
   const [currentTime, setCurrentTime] = useState(Date.now());
   const [chainTimeOffset, setChainTimeOffset] = useState(0);
   const [wallet, setWallet] = useState<WalletState>({ isConnected: false, address: '', network, ethBalance: 0 });
+  const [walletVerified, setWalletVerified] = useState(false);
+  const [faucetNextAvailableAt, setFaucetNextAvailableAt] = useState<number | null>(null);
+  const [faucetCooldownSeconds, setFaucetCooldownSeconds] = useState<number | null>(null);
   const [tokens, setTokens] = useState<TokenInfo[]>(() => {
     try {
       const saved = JSON.parse(localStorage.getItem(TOKEN_REGISTRY_KEY) || '[]') as TokenInfo[];
@@ -186,6 +194,9 @@ export const TimelockProvider: React.FC<{ children: ReactNode }> = ({ children }
   const clearWalletState = () => {
     refreshId.current += 1;
     setWallet({ isConnected: false, address: '', network, ethBalance: 0 });
+    setWalletVerified(false);
+    setFaucetNextAvailableAt(null);
+    setFaucetCooldownSeconds(null);
     setLocks([]);
     setTokens(previous => previous.map(token => ({ ...token, userBalance: '0' })));
     setTxState(null);
@@ -262,10 +273,25 @@ export const TimelockProvider: React.FC<{ children: ReactNode }> = ({ children }
     setTokens(refreshedTokens);
   };
 
+  const refreshFaucetState = async (address: string) => {
+    const provider = getProvider();
+    if (!provider || !HUMBLE_TOKEN_ADDRESS) return;
+    const token = new Contract(HUMBLE_TOKEN_ADDRESS, HUMBLE_TOKEN_ABI, provider);
+    const [lastClaimAt, cooldown, block] = await Promise.all([
+      token.lastClaimAt(address) as Promise<bigint>,
+      token.FAUCET_COOLDOWN() as Promise<bigint>,
+      provider.getBlock('latest'),
+    ]);
+    const chainTimestamp = Number(block?.timestamp ?? 0);
+    setFaucetCooldownSeconds(Number(cooldown));
+    setFaucetNextAvailableAt(lastClaimAt === 0n ? null : Number(lastClaimAt + cooldown));
+    setChainTimeOffset(chainTimestamp * 1000 - Date.now());
+  };
+
   const setWrongNetwork = (chainId: number, address: string) => {
     refreshId.current += 1;
     setWallet({ isConnected: true, address, network: { ...network, name: `Wrong Network (${chainId})`, chainId }, ethBalance: 0 });
-    setTokens([{ ...tokenTemplate, userBalance: '0' }]);
+    setTokens(previous => previous.map(token => ({ ...token, userBalance: '0' })));
     setLocks([]);
   };
 
@@ -284,6 +310,7 @@ export const TimelockProvider: React.FC<{ children: ReactNode }> = ({ children }
 
     try {
       await refreshChainState(address, chainId);
+      await refreshFaucetState(address);
     } catch (error) {
       addToast({ type: 'error', ...readableError(error) });
     }
@@ -310,6 +337,17 @@ export const TimelockProvider: React.FC<{ children: ReactNode }> = ({ children }
   const disconnectWallet = () => {
     localStorage.setItem(DISCONNECTED_KEY, 'true');
     clearWalletState();
+  };
+
+  const verifyWalletOwnership = async () => {
+    if (!wallet.isConnected || wallet.network.chainId !== SEPOLIA_CHAIN_ID) throw new Error('wrong network');
+    const provider = getProvider();
+    if (!provider) throw new Error('wallet not installed');
+    const message = 'Sign this message to verify that you own this wallet for Crypto-Vault. This signature does not authorize any token transfer.';
+    const signature = await (await provider.getSigner()).signMessage(message);
+    if (!signature) throw new Error('wallet verification failed');
+    setWalletVerified(true);
+    addToast({ type: 'success', title: 'Wallet verified', message: 'Ownership was verified by your wallet signature. No token transfer was authorized.' });
   };
 
   const switchNetwork = async () => {
@@ -351,6 +389,12 @@ export const TimelockProvider: React.FC<{ children: ReactNode }> = ({ children }
     }, 5000);
     return () => window.clearInterval(timer);
   }, [wallet.isConnected, wallet.network.chainId]);
+
+  useEffect(() => {
+    if (!wallet.isConnected || wallet.network.chainId !== SEPOLIA_CHAIN_ID) return;
+    const timer = window.setInterval(() => void refreshFaucetState(wallet.address), 5000);
+    return () => window.clearInterval(timer);
+  }, [wallet.isConnected, wallet.address, wallet.network.chainId]);
 
   useEffect(() => {
     setLocks(previous => previous.map(lock => {
@@ -516,26 +560,28 @@ export const TimelockProvider: React.FC<{ children: ReactNode }> = ({ children }
 
   const claimFaucet = async () => {
     if (!wallet.isConnected || wallet.network.chainId !== SEPOLIA_CHAIN_ID) throw new Error('wrong network');
-    if (!MOCK_TOKEN_ADDRESS) throw new Error('mock token address not configured');
+    if (!HUMBLE_TOKEN_ADDRESS) throw new Error('humble token address not configured');
 
     const provider = getProvider();
     if (!provider) throw new Error('wallet not installed');
 
     const signer = await provider.getSigner();
-    const token = new Contract(MOCK_TOKEN_ADDRESS, MOCK_TOKEN_ABI, signer);
+    const token = new Contract(HUMBLE_TOKEN_ADDRESS, HUMBLE_TOKEN_ABI, signer);
     const faucetAmount = await token.FAUCET_AMOUNT();
 
-    setTxState({ step: 'locking', title: 'Claim MTK', description: 'Waiting for wallet confirmation...' });
+    setTxState({ step: 'locking', title: 'Claim HMT', description: 'Waiting for wallet confirmation...' });
     const transaction = await token.claimFaucet();
-    setTxState({ step: 'locking', title: 'Claim MTK', description: 'Transaction pending...', txHash: transaction.hash });
+    setTxState({ step: 'locking', title: 'Claim HMT', description: 'Transaction pending...', txHash: transaction.hash });
     await transaction.wait();
 
-    const nextBalance = ethers.formatUnits(await token.balanceOf(wallet.address), tokenTemplate.decimals);
-    setTokens(prev => prev.map(item => (item.address.toLowerCase() === MOCK_TOKEN_ADDRESS.toLowerCase() ? { ...item, userBalance: nextBalance } : item)));
+    const decimals = Number(await token.decimals());
+    const nextBalance = ethers.formatUnits(await token.balanceOf(wallet.address), decimals);
+    setTokens(prev => prev.map(item => (item.address.toLowerCase() === HUMBLE_TOKEN_ADDRESS.toLowerCase() ? { ...item, userBalance: nextBalance, decimals } : item)));
+    await refreshFaucetState(wallet.address);
     await refreshChainState(wallet.address);
 
-    setTxState({ step: 'success', title: 'MTK claimed', description: 'Your Sepolia test tokens have been sent to your wallet.', txHash: transaction.hash });
-    addToast({ type: 'success', title: 'MTK Claimed', message: `${ethers.formatUnits(faucetAmount, 18)} MTK added to your wallet.` });
+    setTxState({ step: 'success', title: 'HMT claimed', description: 'Your Sepolia test tokens have been sent to your wallet.', txHash: transaction.hash });
+    addToast({ type: 'success', title: 'HMT Claimed', message: `${ethers.formatUnits(faucetAmount, decimals)} HMT added to your wallet.` });
   };
 
   const withdrawLock = async (lockId: string) => {
@@ -587,12 +633,17 @@ export const TimelockProvider: React.FC<{ children: ReactNode }> = ({ children }
         detectToken,
         stats,
         currentTime,
+        chainTimeOffset,
         allLocks: locks,
         activeLocks,
         readyLocks,
         completedLocks,
         createLock,
         claimFaucet,
+        faucetNextAvailableAt,
+        faucetCooldownSeconds,
+        verifyWalletOwnership,
+        walletVerified,
         withdrawLock,
         txState,
         resetTxState,

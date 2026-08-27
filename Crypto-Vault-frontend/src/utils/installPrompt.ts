@@ -11,6 +11,7 @@ const isStandalone = () => window.matchMedia('(display-mode: standalone)').match
 export function useInstallPrompt() {
   const [installEvent, setInstallEvent] = useState<BeforeInstallPromptEvent | null>(null);
   const [isInstalled, setIsInstalled] = useState(isStandalone);
+  const [installRequested, setInstallRequested] = useState(false);
 
   useEffect(() => {
     const handleBeforeInstallPrompt = (event: Event) => {
@@ -20,6 +21,7 @@ export function useInstallPrompt() {
     const handleInstalled = () => {
       setInstallEvent(null);
       setIsInstalled(true);
+      setInstallRequested(false);
     };
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
@@ -35,8 +37,14 @@ export function useInstallPrompt() {
     await installEvent.prompt();
     const choice = await installEvent.userChoice;
     setInstallEvent(null);
+    if (choice.outcome === 'accepted') setInstallRequested(true);
     return choice.outcome === 'accepted';
   };
 
-  return { canInstall: Boolean(installEvent) && !isInstalled, isInstalled, install, manualInstall: !installEvent && !isInstalled };
+  return {
+    canInstall: Boolean(installEvent) && !isInstalled && !installRequested,
+    isInstalled,
+    install,
+    manualInstall: !installEvent && !isInstalled && !installRequested,
+  };
 }

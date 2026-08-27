@@ -16,6 +16,7 @@ getContractFactory(name: 'IERC20Approver', signerOrOptions?: ethers.Signer | Fac
 getContractFactory(name: 'ITokenLocker', signerOrOptions?: ethers.Signer | FactoryOptions): Promise<Contracts.ITokenLocker__factory>
 getContractFactory(name: 'ReentrantFeeRecipient', signerOrOptions?: ethers.Signer | FactoryOptions): Promise<Contracts.ReentrantFeeRecipient__factory>
 getContractFactory(name: 'TokenLocker', signerOrOptions?: ethers.Signer | FactoryOptions): Promise<Contracts.TokenLocker__factory>
+getContractFactory(name: 'HumbleToken', signerOrOptions?: ethers.Signer | FactoryOptions): Promise<Contracts.HumbleToken__factory>
 
   getContractAt(name: 'MockToken', address: string | ethers.Addressable, signer?: ethers.Signer): Promise<Contracts.MockToken>
 getContractAt(name: 'FeeRejector', address: string | ethers.Addressable, signer?: ethers.Signer): Promise<Contracts.FeeRejector>
@@ -23,6 +24,7 @@ getContractAt(name: 'IERC20Approver', address: string | ethers.Addressable, sign
 getContractAt(name: 'ITokenLocker', address: string | ethers.Addressable, signer?: ethers.Signer): Promise<Contracts.ITokenLocker>
 getContractAt(name: 'ReentrantFeeRecipient', address: string | ethers.Addressable, signer?: ethers.Signer): Promise<Contracts.ReentrantFeeRecipient>
 getContractAt(name: 'TokenLocker', address: string | ethers.Addressable, signer?: ethers.Signer): Promise<Contracts.TokenLocker>
+getContractAt(name: 'HumbleToken', address: string | ethers.Addressable, signer?: ethers.Signer): Promise<Contracts.HumbleToken>
 
   deployContract(name: 'MockToken', signerOrOptions?: ethers.Signer | DeployContractOptions): Promise<Contracts.MockToken>
 deployContract(name: 'FeeRejector', signerOrOptions?: ethers.Signer | DeployContractOptions): Promise<Contracts.FeeRejector>
@@ -30,6 +32,7 @@ deployContract(name: 'IERC20Approver', signerOrOptions?: ethers.Signer | DeployC
 deployContract(name: 'ITokenLocker', signerOrOptions?: ethers.Signer | DeployContractOptions): Promise<Contracts.ITokenLocker>
 deployContract(name: 'ReentrantFeeRecipient', signerOrOptions?: ethers.Signer | DeployContractOptions): Promise<Contracts.ReentrantFeeRecipient>
 deployContract(name: 'TokenLocker', signerOrOptions?: ethers.Signer | DeployContractOptions): Promise<Contracts.TokenLocker>
+deployContract(name: 'HumbleToken', signerOrOptions?: ethers.Signer | DeployContractOptions): Promise<Contracts.HumbleToken>
 
   deployContract(name: 'MockToken', args: any[], signerOrOptions?: ethers.Signer | DeployContractOptions): Promise<Contracts.MockToken>
 deployContract(name: 'FeeRejector', args: any[], signerOrOptions?: ethers.Signer | DeployContractOptions): Promise<Contracts.FeeRejector>
@@ -37,6 +40,7 @@ deployContract(name: 'IERC20Approver', args: any[], signerOrOptions?: ethers.Sig
 deployContract(name: 'ITokenLocker', args: any[], signerOrOptions?: ethers.Signer | DeployContractOptions): Promise<Contracts.ITokenLocker>
 deployContract(name: 'ReentrantFeeRecipient', args: any[], signerOrOptions?: ethers.Signer | DeployContractOptions): Promise<Contracts.ReentrantFeeRecipient>
 deployContract(name: 'TokenLocker', args: any[], signerOrOptions?: ethers.Signer | DeployContractOptions): Promise<Contracts.TokenLocker>
+deployContract(name: 'HumbleToken', args: any[], signerOrOptions?: ethers.Signer | DeployContractOptions): Promise<Contracts.HumbleToken>
 
     // default types
     getContractFactory(

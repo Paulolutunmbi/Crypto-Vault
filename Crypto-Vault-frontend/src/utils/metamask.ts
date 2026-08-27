@@ -1,5 +1,3 @@
-import { MOCK_TOKEN_ADDRESS } from '../config/contracts';
-
 export async function addTokenToWallet(address: string, symbol: string, decimals: number, image?: string): Promise<boolean> {
   if (!window.ethereum) return false;
 
@@ -16,8 +14,4 @@ export async function addTokenToWallet(address: string, symbol: string, decimals
   } catch {
     return false;
   }
-}
-
-export async function addMockTokenToWallet(): Promise<boolean> {
-  return addTokenToWallet(MOCK_TOKEN_ADDRESS, 'MTK', 18);
 }
