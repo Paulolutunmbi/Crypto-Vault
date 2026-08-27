@@ -7,6 +7,7 @@ export type { HumbleToken } from './HumbleToken.js';
 export type { MockToken } from './MockToken.js';
 export type { TokenLocker } from './TokenLocker.js';
 export * as factories from './factories/index.js';
+export { HumbleToken__factory } from './factories/HumbleToken__factory.js';
 export { MockToken__factory } from './factories/MockToken__factory.js';
 export type { FeeRejector } from './TestHelpers.sol/FeeRejector.js';
 export { FeeRejector__factory } from './factories/TestHelpers.sol/FeeRejector__factory.js';
@@ -17,4 +18,3 @@ export { ITokenLocker__factory } from './factories/TestHelpers.sol/ITokenLocker_
 export type { ReentrantFeeRecipient } from './TestHelpers.sol/ReentrantFeeRecipient.js';
 export { ReentrantFeeRecipient__factory } from './factories/TestHelpers.sol/ReentrantFeeRecipient__factory.js';
 export { TokenLocker__factory } from './factories/TokenLocker__factory.js';
-export { HumbleToken__factory } from './factories/HumbleToken__factory.js';

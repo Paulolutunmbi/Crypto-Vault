@@ -12,6 +12,8 @@ export default defineConfig({
       short_name: 'Crypto-Vault',
       description: 'Non-custodial blockchain time-lock vaults.',
       display: 'standalone',
+      start_url: '/',
+      scope: '/',
       theme_color: '#2C332B',
       background_color: '#F7F6F2',
       icons: [],
