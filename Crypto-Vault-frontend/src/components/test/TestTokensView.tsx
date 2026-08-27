@@ -50,7 +50,7 @@ export const TestTokensView: React.FC = () => {
     window.setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleAddToMetaMask = async () => {
+  const handleAddToWallet = async () => {
     if (!getWalletProvider()) {
       addToast({ type: 'warning', title: 'Wallet unavailable', message: 'Connect a compatible wallet app or browser extension to add HMT.' });
       return;
@@ -153,7 +153,7 @@ export const TestTokensView: React.FC = () => {
 
           <button
             type="button"
-            onClick={handleAddToMetaMask}
+            onClick={handleAddToWallet}
             disabled={!getWalletProvider() || !HUMBLE_TOKEN_ADDRESS || watchingAsset}
             className="inline-flex items-center justify-center gap-2 bg-[#2C332B] hover:bg-black text-white text-sm font-semibold rounded-xl px-4 py-2.5 disabled:opacity-60 disabled:cursor-not-allowed"
           >
