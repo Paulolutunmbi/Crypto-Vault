@@ -1,9 +1,9 @@
 import { ethers } from 'ethers';
 
 export const SEPOLIA_CHAIN_ID = 11155111;
-export const TOKEN_LOCKER_ADDRESS = import.meta.env.VITE_TOKEN_LOCKER_ADDRESS || '0x408fc26a95D286eb88d097B8709643Ee7Cb51640';
-export const MOCK_TOKEN_ADDRESS = import.meta.env.VITE_MOCK_TOKEN_ADDRESS || '0x7dC7b756aA3EFa2FdBc0b00051f87f0eAFbe367B';
-export const SEPOLIA_RPC_URL = import.meta.env.VITE_SEPOLIA_RPC_URL || '';
+export const TOKEN_LOCKER_ADDRESS = (import.meta.env.VITE_TOKEN_LOCKER_ADDRESS ?? '').trim();
+export const MOCK_TOKEN_ADDRESS = (import.meta.env.VITE_MOCK_TOKEN_ADDRESS ?? '').trim();
+export const SEPOLIA_RPC_URL = (import.meta.env.VITE_SEPOLIA_RPC_URL ?? '').trim();
 export const PROTOCOL_FEE = ethers.parseEther('0.0001');
 
 export const SEPOLIA_NETWORK = {
@@ -26,6 +26,20 @@ export const TOKEN_LOCKER_ABI = [
   'event LockWithdrawn(uint256 indexed lockId, address indexed token, address indexed owner, uint256 amount)',
 ];
 
+export const MOCK_TOKEN_ABI = [
+  'function claimFaucet() returns (bool)',
+  'function FAUCET_AMOUNT() view returns (uint256)',
+  'function FAUCET_COOLDOWN() view returns (uint256)',
+  'function allowance(address owner, address spender) view returns (uint256)',
+  'function approve(address spender, uint256 amount) returns (bool)',
+  'function balanceOf(address account) view returns (uint256)',
+  'function decimals() view returns (uint8)',
+  'function name() view returns (string)',
+  'function symbol() view returns (string)',
+  'function totalSupply() view returns (uint256)',
+  'event FaucetClaimed(address indexed claimant, uint256 amount, uint256 claimedAt)',
+];
+
 export const ERC20_ABI = [
   'function allowance(address owner, address spender) view returns (uint256)',
   'function approve(address spender, uint256 amount) returns (bool)',
@@ -33,4 +47,5 @@ export const ERC20_ABI = [
   'function decimals() view returns (uint8)',
   'function name() view returns (string)',
   'function symbol() view returns (string)',
+  'function totalSupply() view returns (uint256)',
 ];

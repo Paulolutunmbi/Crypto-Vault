@@ -65,7 +65,8 @@ describe("MockToken", function () {
     await expect(token.connect(user).claimFaucet())
       .to.be.revertedWithCustomError(token, "FaucetCooldown");
 
-    await networkHelpers.time.increaseTo(claimAt + (await token.FAUCET_COOLDOWN()));
+    const faucetCooldown = await token.FAUCET_COOLDOWN();
+    await networkHelpers.time.increaseTo(BigInt(claimAt) + faucetCooldown);
     await token.connect(user).claimFaucet();
     expect(await token.balanceOf(user.address)).to.equal((await token.FAUCET_AMOUNT()) * 2n);
   });

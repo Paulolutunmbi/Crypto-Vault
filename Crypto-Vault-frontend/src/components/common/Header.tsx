@@ -111,6 +111,17 @@ export const Header: React.FC = () => {
             >
               Docs
             </button>
+            <button
+              id="nav-test-tokens-btn"
+              onClick={() => setActiveTab('test-tokens')}
+              className={`h-16 flex items-center text-sm font-medium transition-colors duration-150 border-b-2 ${
+                activeTab === 'test-tokens'
+                  ? 'text-[#2C332B] font-semibold border-[#7D8C7B]'
+                  : 'text-[#7A7E78] hover:text-[#2C332B] border-transparent'
+              }`}
+            >
+              Test Tokens
+            </button>
           </nav>
         </div>
 
@@ -288,6 +299,16 @@ export const Header: React.FC = () => {
           }`}
         >
           Docs
+        </button>
+        <button
+          onClick={() => setActiveTab('test-tokens')}
+          className={`py-2.5 px-3 text-xs font-medium border-b-2 whitespace-nowrap ${
+            activeTab === 'test-tokens'
+              ? 'text-[#2C332B] border-[#7D8C7B]'
+              : 'text-[#7A7E78] border-transparent'
+          }`}
+        >
+          Test Tokens
         </button>
       </div>
     </header>

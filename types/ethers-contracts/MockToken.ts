@@ -6,13 +6,16 @@ import type { TypedContractEvent, TypedDeferredTopicFilter, TypedEventLog, Typed
   
 
   export interface MockTokenInterface extends Interface {
-    getFunction(nameOrSignature: "allowance" | "approve" | "balanceOf" | "decimals" | "name" | "symbol" | "totalSupply" | "transfer" | "transferFrom"): FunctionFragment;
+    getFunction(nameOrSignature: "FAUCET_AMOUNT" | "FAUCET_COOLDOWN" | "allowance" | "approve" | "balanceOf" | "claimFaucet" | "decimals" | "name" | "symbol" | "totalSupply" | "transfer" | "transferFrom"): FunctionFragment;
 
-    getEvent(nameOrSignatureOrTopic: "Approval" | "Transfer"): EventFragment;
+    getEvent(nameOrSignatureOrTopic: "Approval" | "FaucetClaimed" | "Transfer"): EventFragment;
 
-    encodeFunctionData(functionFragment: 'allowance', values: [AddressLike, AddressLike]): string;
+    encodeFunctionData(functionFragment: 'FAUCET_AMOUNT', values?: undefined): string;
+encodeFunctionData(functionFragment: 'FAUCET_COOLDOWN', values?: undefined): string;
+encodeFunctionData(functionFragment: 'allowance', values: [AddressLike, AddressLike]): string;
 encodeFunctionData(functionFragment: 'approve', values: [AddressLike, BigNumberish]): string;
 encodeFunctionData(functionFragment: 'balanceOf', values: [AddressLike]): string;
+encodeFunctionData(functionFragment: 'claimFaucet', values?: undefined): string;
 encodeFunctionData(functionFragment: 'decimals', values?: undefined): string;
 encodeFunctionData(functionFragment: 'name', values?: undefined): string;
 encodeFunctionData(functionFragment: 'symbol', values?: undefined): string;
@@ -20,9 +23,12 @@ encodeFunctionData(functionFragment: 'totalSupply', values?: undefined): string;
 encodeFunctionData(functionFragment: 'transfer', values: [AddressLike, BigNumberish]): string;
 encodeFunctionData(functionFragment: 'transferFrom', values: [AddressLike, AddressLike, BigNumberish]): string;
 
-    decodeFunctionResult(functionFragment: 'allowance', data: BytesLike): Result;
+    decodeFunctionResult(functionFragment: 'FAUCET_AMOUNT', data: BytesLike): Result;
+decodeFunctionResult(functionFragment: 'FAUCET_COOLDOWN', data: BytesLike): Result;
+decodeFunctionResult(functionFragment: 'allowance', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'approve', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'balanceOf', data: BytesLike): Result;
+decodeFunctionResult(functionFragment: 'claimFaucet', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'decimals', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'name', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'symbol', data: BytesLike): Result;
@@ -36,6 +42,18 @@ decodeFunctionResult(functionFragment: 'transferFrom', data: BytesLike): Result;
       export type InputTuple = [owner: AddressLike, spender: AddressLike, value: BigNumberish];
       export type OutputTuple = [owner: string, spender: string, value: bigint];
       export interface OutputObject {owner: string, spender: string, value: bigint };
+      export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>
+      export type Filter = TypedDeferredTopicFilter<Event>
+      export type Log = TypedEventLog<Event>
+      export type LogDescription = TypedLogDescription<Event>
+    }
+
+  
+
+    export namespace FaucetClaimedEvent {
+      export type InputTuple = [claimant: AddressLike, amount: BigNumberish, claimedAt: BigNumberish];
+      export type OutputTuple = [claimant: string, amount: bigint, claimedAt: bigint];
+      export interface OutputObject {claimant: string, amount: bigint, claimedAt: bigint };
       export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>
       export type Filter = TypedDeferredTopicFilter<Event>
       export type Log = TypedEventLog<Event>
@@ -90,6 +108,22 @@ decodeFunctionResult(functionFragment: 'transferFrom', data: BytesLike): Result;
 
     
     
+    FAUCET_AMOUNT: TypedContractMethod<
+      [],
+      [bigint],
+      'view'
+    >
+    
+
+    
+    FAUCET_COOLDOWN: TypedContractMethod<
+      [],
+      [bigint],
+      'view'
+    >
+    
+
+    
     allowance: TypedContractMethod<
       [owner: AddressLike, spender: AddressLike, ],
       [bigint],
@@ -110,6 +144,14 @@ decodeFunctionResult(functionFragment: 'transferFrom', data: BytesLike): Result;
       [account: AddressLike, ],
       [bigint],
       'view'
+    >
+    
+
+    
+    claimFaucet: TypedContractMethod<
+      [],
+      [void],
+      'nonpayable'
     >
     
 
@@ -164,7 +206,17 @@ decodeFunctionResult(functionFragment: 'transferFrom', data: BytesLike): Result;
 
     getFunction<T extends ContractMethod = ContractMethod>(key: string | FunctionFragment): T;
 
-    getFunction(nameOrSignature: 'allowance'): TypedContractMethod<
+    getFunction(nameOrSignature: 'FAUCET_AMOUNT'): TypedContractMethod<
+      [],
+      [bigint],
+      'view'
+    >;
+getFunction(nameOrSignature: 'FAUCET_COOLDOWN'): TypedContractMethod<
+      [],
+      [bigint],
+      'view'
+    >;
+getFunction(nameOrSignature: 'allowance'): TypedContractMethod<
       [owner: AddressLike, spender: AddressLike, ],
       [bigint],
       'view'
@@ -178,6 +230,11 @@ getFunction(nameOrSignature: 'balanceOf'): TypedContractMethod<
       [account: AddressLike, ],
       [bigint],
       'view'
+    >;
+getFunction(nameOrSignature: 'claimFaucet'): TypedContractMethod<
+      [],
+      [void],
+      'nonpayable'
     >;
 getFunction(nameOrSignature: 'decimals'): TypedContractMethod<
       [],
@@ -211,12 +268,17 @@ getFunction(nameOrSignature: 'transferFrom'): TypedContractMethod<
     >;
 
     getEvent(key: 'Approval'): TypedContractEvent<ApprovalEvent.InputTuple, ApprovalEvent.OutputTuple, ApprovalEvent.OutputObject>;
+getEvent(key: 'FaucetClaimed'): TypedContractEvent<FaucetClaimedEvent.InputTuple, FaucetClaimedEvent.OutputTuple, FaucetClaimedEvent.OutputObject>;
 getEvent(key: 'Transfer'): TypedContractEvent<TransferEvent.InputTuple, TransferEvent.OutputTuple, TransferEvent.OutputObject>;
 
     filters: {
       
       'Approval(address,address,uint256)': TypedContractEvent<ApprovalEvent.InputTuple, ApprovalEvent.OutputTuple, ApprovalEvent.OutputObject>;
       Approval: TypedContractEvent<ApprovalEvent.InputTuple, ApprovalEvent.OutputTuple, ApprovalEvent.OutputObject>;
+    
+
+      'FaucetClaimed(address,uint256,uint256)': TypedContractEvent<FaucetClaimedEvent.InputTuple, FaucetClaimedEvent.OutputTuple, FaucetClaimedEvent.OutputObject>;
+      FaucetClaimed: TypedContractEvent<FaucetClaimedEvent.InputTuple, FaucetClaimedEvent.OutputTuple, FaucetClaimedEvent.OutputObject>;
     
 
       'Transfer(address,address,uint256)': TypedContractEvent<TransferEvent.InputTuple, TransferEvent.OutputTuple, TransferEvent.OutputObject>;

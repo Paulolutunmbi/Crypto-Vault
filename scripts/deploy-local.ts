@@ -29,13 +29,15 @@ const tokenLocker = await ethers.deployContract(
 await tokenLocker.waitForDeployment();
 
 const protocolFee = await tokenLocker.PROTOCOL_FEE();
+const mockTokenAddress = await mockToken.getAddress();
+const tokenLockerAddress = await tokenLocker.getAddress();
 
 console.log("Deployment complete");
 console.log(`Network: ${(await ethers.provider.getNetwork()).name}`);
 console.log(`Deployer: ${deployerAddress}`);
 console.log(`Fee recipient: ${deployerAddress}`);
-console.log(`MockToken: ${await mockToken.getAddress()}`);
-console.log(`TokenLocker: ${await tokenLocker.getAddress()}`);
+console.log(`MockToken contract address: ${mockTokenAddress}`);
+console.log(`TokenLocker contract address: ${tokenLockerAddress}`);
 console.log(
   `Protocol fee: ${ethers.formatEther(protocolFee)} ETH (${protocolFee} wei)`
 );
@@ -45,3 +47,7 @@ console.log(
     18
   )} MTK`
 );
+
+console.log("Frontend configuration update required:");
+console.log(`VITE_MOCK_TOKEN_ADDRESS="${mockTokenAddress}"`);
+console.log(`VITE_TOKEN_LOCKER_ADDRESS="${tokenLockerAddress}"`);

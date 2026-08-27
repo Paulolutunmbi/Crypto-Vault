@@ -10,32 +10,32 @@ import * as Contracts from "./index.js";
 
 declare module "@nomicfoundation/hardhat-ethers/types" {
   interface HardhatEthersHelpers extends HardhatEthersHelpersBase {
-  getContractFactory(name: 'FeeRejector', signerOrOptions?: ethers.Signer | FactoryOptions): Promise<Contracts.FeeRejector__factory>
+  getContractFactory(name: 'MockToken', signerOrOptions?: ethers.Signer | FactoryOptions): Promise<Contracts.MockToken__factory>
+getContractFactory(name: 'FeeRejector', signerOrOptions?: ethers.Signer | FactoryOptions): Promise<Contracts.FeeRejector__factory>
 getContractFactory(name: 'IERC20Approver', signerOrOptions?: ethers.Signer | FactoryOptions): Promise<Contracts.IERC20Approver__factory>
 getContractFactory(name: 'ITokenLocker', signerOrOptions?: ethers.Signer | FactoryOptions): Promise<Contracts.ITokenLocker__factory>
 getContractFactory(name: 'ReentrantFeeRecipient', signerOrOptions?: ethers.Signer | FactoryOptions): Promise<Contracts.ReentrantFeeRecipient__factory>
-getContractFactory(name: 'MockToken', signerOrOptions?: ethers.Signer | FactoryOptions): Promise<Contracts.MockToken__factory>
 getContractFactory(name: 'TokenLocker', signerOrOptions?: ethers.Signer | FactoryOptions): Promise<Contracts.TokenLocker__factory>
 
-  getContractAt(name: 'FeeRejector', address: string | ethers.Addressable, signer?: ethers.Signer): Promise<Contracts.FeeRejector>
+  getContractAt(name: 'MockToken', address: string | ethers.Addressable, signer?: ethers.Signer): Promise<Contracts.MockToken>
+getContractAt(name: 'FeeRejector', address: string | ethers.Addressable, signer?: ethers.Signer): Promise<Contracts.FeeRejector>
 getContractAt(name: 'IERC20Approver', address: string | ethers.Addressable, signer?: ethers.Signer): Promise<Contracts.IERC20Approver>
 getContractAt(name: 'ITokenLocker', address: string | ethers.Addressable, signer?: ethers.Signer): Promise<Contracts.ITokenLocker>
 getContractAt(name: 'ReentrantFeeRecipient', address: string | ethers.Addressable, signer?: ethers.Signer): Promise<Contracts.ReentrantFeeRecipient>
-getContractAt(name: 'MockToken', address: string | ethers.Addressable, signer?: ethers.Signer): Promise<Contracts.MockToken>
 getContractAt(name: 'TokenLocker', address: string | ethers.Addressable, signer?: ethers.Signer): Promise<Contracts.TokenLocker>
 
-  deployContract(name: 'FeeRejector', signerOrOptions?: ethers.Signer | DeployContractOptions): Promise<Contracts.FeeRejector>
+  deployContract(name: 'MockToken', signerOrOptions?: ethers.Signer | DeployContractOptions): Promise<Contracts.MockToken>
+deployContract(name: 'FeeRejector', signerOrOptions?: ethers.Signer | DeployContractOptions): Promise<Contracts.FeeRejector>
 deployContract(name: 'IERC20Approver', signerOrOptions?: ethers.Signer | DeployContractOptions): Promise<Contracts.IERC20Approver>
 deployContract(name: 'ITokenLocker', signerOrOptions?: ethers.Signer | DeployContractOptions): Promise<Contracts.ITokenLocker>
 deployContract(name: 'ReentrantFeeRecipient', signerOrOptions?: ethers.Signer | DeployContractOptions): Promise<Contracts.ReentrantFeeRecipient>
-deployContract(name: 'MockToken', signerOrOptions?: ethers.Signer | DeployContractOptions): Promise<Contracts.MockToken>
 deployContract(name: 'TokenLocker', signerOrOptions?: ethers.Signer | DeployContractOptions): Promise<Contracts.TokenLocker>
 
-  deployContract(name: 'FeeRejector', args: any[], signerOrOptions?: ethers.Signer | DeployContractOptions): Promise<Contracts.FeeRejector>
+  deployContract(name: 'MockToken', args: any[], signerOrOptions?: ethers.Signer | DeployContractOptions): Promise<Contracts.MockToken>
+deployContract(name: 'FeeRejector', args: any[], signerOrOptions?: ethers.Signer | DeployContractOptions): Promise<Contracts.FeeRejector>
 deployContract(name: 'IERC20Approver', args: any[], signerOrOptions?: ethers.Signer | DeployContractOptions): Promise<Contracts.IERC20Approver>
 deployContract(name: 'ITokenLocker', args: any[], signerOrOptions?: ethers.Signer | DeployContractOptions): Promise<Contracts.ITokenLocker>
 deployContract(name: 'ReentrantFeeRecipient', args: any[], signerOrOptions?: ethers.Signer | DeployContractOptions): Promise<Contracts.ReentrantFeeRecipient>
-deployContract(name: 'MockToken', args: any[], signerOrOptions?: ethers.Signer | DeployContractOptions): Promise<Contracts.MockToken>
 deployContract(name: 'TokenLocker', args: any[], signerOrOptions?: ethers.Signer | DeployContractOptions): Promise<Contracts.TokenLocker>
 
     // default types

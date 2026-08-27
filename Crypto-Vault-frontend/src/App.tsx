@@ -13,6 +13,7 @@ import { ReadyToWithdrawSection } from './components/dashboard/ReadyToWithdrawSe
 import { VaultsExplorer } from './components/vaults/VaultsExplorer';
 import { GovernanceView } from './components/governance/GovernanceView';
 import { DocsView } from './components/docs/DocsView';
+import { TestTokensView } from './components/test/TestTokensView';
 import { CreateLockModal } from './components/vaults/CreateLockModal';
 import { WithdrawModal } from './components/vaults/WithdrawModal';
 import { LockDetailModal } from './components/vaults/LockDetailModal';
@@ -45,6 +46,8 @@ const MainContent: React.FC = () => {
         {activeTab === 'governance' && <GovernanceView />}
 
         {activeTab === 'docs' && <DocsView />}
+
+        {activeTab === 'test-tokens' && <TestTokensView />}
       </main>
 
       {/* Institutional Footer */}
