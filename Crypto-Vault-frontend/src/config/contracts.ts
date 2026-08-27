@@ -27,7 +27,7 @@ export const TOKEN_LOCKER_ABI = [
 ];
 
 export const MOCK_TOKEN_ABI = [
-  'function claimFaucet() returns (bool)',
+  'function claimFaucet()',
   'function FAUCET_AMOUNT() view returns (uint256)',
   'function FAUCET_COOLDOWN() view returns (uint256)',
   'function allowance(address owner, address spender) view returns (uint256)',

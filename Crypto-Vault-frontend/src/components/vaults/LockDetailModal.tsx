@@ -151,7 +151,7 @@ export const LockDetailModal: React.FC = () => {
           <div className="bg-[#F9F9F7] border border-[#E2E1D8] rounded-xl divide-y divide-[#E2E1D8] text-xs font-mono-numbers">
             {/* Vault Address */}
             <div className="p-3 flex items-center justify-between">
-              <span className="text-[#7A7E78]">Vault Contract:</span>
+              <span className="text-[#7A7E78]">Token Contract:</span>
               <div className="flex items-center gap-1.5 text-[#2C332B]">
                 <span className="font-semibold">{formatAddress(detailTargetLock.tokenAddress, 8, 6)}</span>
                 <button

@@ -83,9 +83,10 @@ export function formatUsdCompact(val: number): string {
 /**
  * Formats token amount with commas
  */
-export function formatTokenAmount(amount: number, maxDecimals = 2): string {
-  return amount.toLocaleString('en-US', {
-    minimumFractionDigits: maxDecimals,
-    maximumFractionDigits: maxDecimals,
-  });
+export function formatTokenAmount(amount: number | string, maxDecimals = 2): string {
+  const value = String(amount);
+  const [integerPart, fractionPart = ''] = value.split('.');
+  const groupedInteger = (integerPart || '0').replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  const fraction = fractionPart.slice(0, maxDecimals).padEnd(maxDecimals, '0');
+  return `${groupedInteger}.${fraction}`;
 }

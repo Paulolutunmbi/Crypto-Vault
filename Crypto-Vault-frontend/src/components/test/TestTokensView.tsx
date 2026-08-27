@@ -13,7 +13,7 @@ export const TestTokensView: React.FC = () => {
   const [txHash, setTxHash] = useState('');
 
   const mtkBalance = useMemo(() => {
-    return tokens.find((token) => token.symbol === 'MTK')?.userBalance ?? 0;
+    return tokens.find((token) => token.symbol === 'MTK')?.userBalance ?? '0';
   }, [tokens]);
 
   const isSepolia = wallet.isConnected && wallet.network.chainId === SEPOLIA_CHAIN_ID;
@@ -83,7 +83,7 @@ export const TestTokensView: React.FC = () => {
     try {
       await claimFaucet();
     } catch (error) {
-      addToast({ type: 'error', ...readableError(error, 'create') });
+      addToast({ type: 'error', ...readableError(error, 'faucet') });
     } finally {
       setClaiming(false);
     }

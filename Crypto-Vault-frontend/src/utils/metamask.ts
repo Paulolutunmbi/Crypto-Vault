@@ -1,20 +1,14 @@
 import { MOCK_TOKEN_ADDRESS } from '../config/contracts';
 
-export async function addMockTokenToWallet(): Promise<boolean> {
-  if (!window.ethereum) {
-    return false;
-  }
+export async function addTokenToWallet(address: string, symbol: string, decimals: number, image?: string): Promise<boolean> {
+  if (!window.ethereum) return false;
 
   try {
     const result = await window.ethereum.request({
       method: 'wallet_watchAsset',
       params: {
         type: 'ERC20',
-        options: {
-          address: MOCK_TOKEN_ADDRESS,
-          symbol: 'MTK',
-          decimals: 18,
-        },
+        options: { address, symbol, decimals, ...(image ? { image } : {}) },
       },
     });
 
@@ -22,4 +16,8 @@ export async function addMockTokenToWallet(): Promise<boolean> {
   } catch {
     return false;
   }
+}
+
+export async function addMockTokenToWallet(): Promise<boolean> {
+  return addTokenToWallet(MOCK_TOKEN_ADDRESS, 'MTK', 18);
 }

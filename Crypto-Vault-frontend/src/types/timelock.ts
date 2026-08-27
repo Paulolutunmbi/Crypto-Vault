@@ -8,7 +8,7 @@ export interface TokenInfo {
   iconLetter: string;
   iconBgColor?: string;
   priceUsd?: number;
-  userBalance: number;
+  userBalance: string;
 }
 
 export interface TimeLock {
@@ -16,7 +16,7 @@ export interface TimeLock {
   tokenAddress: string;
   tokenSymbol: string;
   tokenName: string;
-  amount: number;
+  amount: string;
   amountUsd?: number;
   lockedAtTimestamp: number; // unix ms
   unlocksAtTimestamp: number; // unix ms
@@ -73,6 +73,7 @@ export interface NotificationItem {
   message: string;
   timestamp: number;
   read: boolean;
+  lockId?: string;
   txHash?: string;
 }
 

@@ -1,7 +1,8 @@
 import React from 'react';
-import { X, Settings, Globe, Check } from 'lucide-react';
+import { X, Settings, Globe, Check, Bell, Volume2, Download, Smartphone } from 'lucide-react';
 import { useTimelock } from '../../context/TimelockContext';
 import { SEPOLIA_NETWORK } from '../../config/contracts';
+import { useInstallPrompt } from '../../utils/installPrompt';
 
 export const SettingsModal: React.FC = () => {
   const {
@@ -9,7 +10,12 @@ export const SettingsModal: React.FC = () => {
     setIsSettingsModalOpen,
     wallet,
     switchNetwork,
+    notificationsEnabled,
+    notificationSoundEnabled,
+    setNotificationsEnabled,
+    setNotificationSoundEnabled,
   } = useTimelock();
+  const { canInstall, isInstalled, install } = useInstallPrompt();
 
   if (!isSettingsModalOpen) return null;
 
@@ -73,6 +79,30 @@ export const SettingsModal: React.FC = () => {
             })}
           </div>
         </div>
+
+        <div className="flex flex-col gap-3 border-t border-[#E2E1D8] pt-4">
+          <div className="flex items-center justify-between text-xs font-semibold text-[#2C332B]">
+            <span className="flex items-center gap-2"><Bell className="w-4 h-4 text-[#7D8C7B]" /> Notifications</span>
+            <button aria-pressed={notificationsEnabled} onClick={() => setNotificationsEnabled(!notificationsEnabled)} className={`px-3 py-1 rounded-md text-[11px] font-bold ${notificationsEnabled ? 'bg-[#EDF5ED] text-[#558755]' : 'bg-[#F0F1ED] text-[#7A7E78]'}`}>{notificationsEnabled ? 'ON' : 'OFF'}</button>
+          </div>
+          <div className="flex items-center justify-between text-xs font-semibold text-[#2C332B]">
+            <span className="flex items-center gap-2"><Volume2 className="w-4 h-4 text-[#7D8C7B]" /> Notification sound</span>
+            <button aria-pressed={notificationSoundEnabled} onClick={() => setNotificationSoundEnabled(!notificationSoundEnabled)} className={`px-3 py-1 rounded-md text-[11px] font-bold ${notificationSoundEnabled ? 'bg-[#EDF5ED] text-[#558755]' : 'bg-[#F0F1ED] text-[#7A7E78]'}`}>{notificationSoundEnabled ? 'ON' : 'OFF'}</button>
+          </div>
+        </div>
+
+        {!isInstalled && (
+          <div className="flex flex-col gap-2 border-t border-[#E2E1D8] pt-4">
+            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#7A7E78]"><Smartphone className="w-4 h-4 text-[#7D8C7B]" /> App Installation</div>
+            {canInstall ? (
+              <button type="button" onClick={() => void install()} className="flex items-center justify-center gap-2 rounded-xl bg-[#2C332B] px-4 py-2.5 text-xs font-semibold text-white hover:bg-black">
+                <Download className="w-4 h-4" /> Install Crypto-Vault
+              </button>
+            ) : (
+              <p className="text-xs leading-relaxed text-[#7A7E78]">Installation isn&apos;t available in this browser right now. Use your browser&apos;s menu and choose <span className="font-semibold text-[#2C332B]">Install app</span> or <span className="font-semibold text-[#2C332B]">Add to Home Screen</span> when offered.</p>
+            )}
+          </div>
+        )}
 
         <button
           onClick={() => setIsSettingsModalOpen(false)}
