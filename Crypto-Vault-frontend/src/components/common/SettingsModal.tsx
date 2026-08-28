@@ -15,7 +15,7 @@ export const SettingsModal: React.FC = () => {
     setNotificationsEnabled,
     setNotificationSoundEnabled,
   } = useTimelock();
-  const { canInstall, isInstalled, install, isIos, isUnavailable, installRequested } = useInstallPrompt();
+  const { canInstall, isInstalled, install, isIos, isAndroid, isUnavailable } = useInstallPrompt();
 
   if (!isSettingsModalOpen) return null;
 
@@ -100,11 +100,11 @@ export const SettingsModal: React.FC = () => {
               <Download className="w-4 h-4" /> Install Crypto-Vault
             </button>
           ) : isIos ? (
-            <p className="text-xs leading-relaxed text-[#7A7E78]">To install Crypto-Vault, open your browser menu and choose Add to Home Screen.</p>
-          ) : installRequested ? (
-            <p className="text-xs leading-relaxed text-[#7A7E78]">Installation was accepted. Complete the browser prompt to install Crypto-Vault.</p>
+            <p className="text-xs leading-relaxed text-[#7A7E78]">Install Crypto-Vault from Safari&apos;s Share menu, then choose Add to Home Screen.</p>
+          ) : isAndroid ? (
+            <p className="text-xs leading-relaxed text-[#7A7E78]">Install Crypto-Vault from Chrome&apos;s browser menu, then choose Install app or Add to Home screen.</p>
           ) : isUnavailable ? (
-            <p className="text-xs leading-relaxed text-[#7A7E78]">To install Crypto-Vault, open your browser menu and choose Add to Home Screen or Install App.</p>
+            <p className="text-xs leading-relaxed text-[#7A7E78]">Install Crypto-Vault from your browser menu. On desktop Chrome or Edge, use the install icon in the address bar when available, or choose Install Crypto-Vault from the browser menu.</p>
           ) : (
             <p className="text-xs leading-relaxed text-[#7A7E78]">Checking installation availability...</p>
           )}

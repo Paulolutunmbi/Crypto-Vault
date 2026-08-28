@@ -11,11 +11,13 @@ const isStandalone = () => window.matchMedia('(display-mode: standalone)').match
 const isIosDevice = () => /iPad|iPhone|iPod/.test(navigator.userAgent)
   || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
+const isAndroidDevice = () => /Android/.test(navigator.userAgent);
+
 export function useInstallPrompt() {
   const [installEvent, setInstallEvent] = useState<BeforeInstallPromptEvent | null>(null);
   const [isInstalled, setIsInstalled] = useState(isStandalone);
-  const [installRequested, setInstallRequested] = useState(false);
   const [isIos] = useState(isIosDevice);
+  const [isAndroid] = useState(isAndroidDevice);
 
   useEffect(() => {
     const updateInstalledState = () => {
@@ -25,12 +27,10 @@ export function useInstallPrompt() {
       event.preventDefault();
       if (isStandalone()) return;
       setInstallEvent(event as BeforeInstallPromptEvent);
-      setInstallRequested(false);
     };
     const handleInstalled = () => {
       setInstallEvent(null);
       setIsInstalled(true);
-      setInstallRequested(false);
     };
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
@@ -48,25 +48,24 @@ export function useInstallPrompt() {
   const install = async () => {
     if (!installEvent || isInstalled) return false;
     const promptEvent = installEvent;
-    setInstallEvent(null);
     try {
       await promptEvent.prompt();
       const choice = await promptEvent.userChoice;
-      setInstallRequested(choice.outcome === 'accepted');
+      setInstallEvent(null);
       if (choice.outcome === 'accepted' && isStandalone()) setIsInstalled(true);
       return choice.outcome === 'accepted';
     } catch {
-      setInstallRequested(false);
+      setInstallEvent(null);
       return false;
     }
   };
 
   return {
-    canInstall: Boolean(installEvent) && !isInstalled && !installRequested,
+    canInstall: Boolean(installEvent) && !isInstalled,
     isInstalled,
     install,
     isIos,
-    isUnavailable: !installEvent && !isInstalled && !isIos && !installRequested,
-    installRequested,
+    isAndroid,
+    isUnavailable: !installEvent && !isInstalled,
   };
 }
