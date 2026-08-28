@@ -1,71 +1,92 @@
-import { useEffect, useState } from 'react';
+import { useSyncExternalStore } from 'react';
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
 }
 
-const isStandalone = () => window.matchMedia('(display-mode: standalone)').matches
+interface InstallState {
+  event: BeforeInstallPromptEvent | null;
+  isInstalled: boolean;
+}
+
+const standaloneQuery = '(display-mode: standalone)';
+
+const isStandalone = () => window.matchMedia(standaloneQuery).matches
   || Boolean((navigator as Navigator & { standalone?: boolean }).standalone);
+
+const initialState: InstallState = {
+  event: null,
+  isInstalled: isStandalone(),
+};
+
+let state = initialState;
+const listeners = new Set<() => void>();
+
+const notify = () => listeners.forEach(listener => listener());
+
+const updateState = (nextState: Partial<InstallState>) => {
+  state = { ...state, ...nextState };
+  notify();
+};
+
+const handleBeforeInstallPrompt = (event: Event) => {
+  if (isStandalone()) return;
+  event.preventDefault();
+  updateState({ event: event as BeforeInstallPromptEvent });
+};
+
+const handleInstalled = () => updateState({ event: null, isInstalled: true });
+
+window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+window.addEventListener('appinstalled', handleInstalled);
+
+const refreshInstalledState = () => {
+  if (isStandalone()) updateState({ event: null, isInstalled: true });
+};
+
+window.addEventListener('pageshow', refreshInstalledState);
+document.addEventListener('visibilitychange', refreshInstalledState);
 
 const isIosDevice = () => /iPad|iPhone|iPod/.test(navigator.userAgent)
   || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
 const isAndroidDevice = () => /Android/.test(navigator.userAgent);
 
+const isIos = isIosDevice();
+const isAndroid = isAndroidDevice();
+
 export function useInstallPrompt() {
-  const [installEvent, setInstallEvent] = useState<BeforeInstallPromptEvent | null>(null);
-  const [isInstalled, setIsInstalled] = useState(isStandalone);
-  const [isIos] = useState(isIosDevice);
-  const [isAndroid] = useState(isAndroidDevice);
-
-  useEffect(() => {
-    const updateInstalledState = () => {
-      if (isStandalone()) setIsInstalled(true);
-    };
-    const handleBeforeInstallPrompt = (event: Event) => {
-      event.preventDefault();
-      if (isStandalone()) return;
-      setInstallEvent(event as BeforeInstallPromptEvent);
-    };
-    const handleInstalled = () => {
-      setInstallEvent(null);
-      setIsInstalled(true);
-    };
-
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-    window.addEventListener('appinstalled', handleInstalled);
-    window.addEventListener('pageshow', updateInstalledState);
-    document.addEventListener('visibilitychange', updateInstalledState);
-    return () => {
-      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-      window.removeEventListener('appinstalled', handleInstalled);
-      window.removeEventListener('pageshow', updateInstalledState);
-      document.removeEventListener('visibilitychange', updateInstalledState);
-    };
-  }, []);
+  const currentState = useSyncExternalStore(
+    (listener) => {
+      listeners.add(listener);
+      return () => listeners.delete(listener);
+    },
+    () => state,
+    () => initialState,
+  );
 
   const install = async () => {
-    if (!installEvent || isInstalled) return false;
-    const promptEvent = installEvent;
+    if (!currentState.event || currentState.isInstalled) return false;
+    const promptEvent = currentState.event;
     try {
       await promptEvent.prompt();
       const choice = await promptEvent.userChoice;
-      setInstallEvent(null);
-      if (choice.outcome === 'accepted' && isStandalone()) setIsInstalled(true);
+      updateState({ event: null });
+      if (choice.outcome === 'accepted' && isStandalone()) updateState({ isInstalled: true });
       return choice.outcome === 'accepted';
     } catch {
-      setInstallEvent(null);
+      updateState({ event: null });
       return false;
     }
   };
 
   return {
-    canInstall: Boolean(installEvent) && !isInstalled,
-    isInstalled,
+    canInstall: Boolean(currentState.event) && !currentState.isInstalled,
+    isInstalled: currentState.isInstalled,
     install,
     isIos,
     isAndroid,
-    isUnavailable: !installEvent && !isInstalled,
+    isUnavailable: !currentState.event && !currentState.isInstalled,
   };
 }
