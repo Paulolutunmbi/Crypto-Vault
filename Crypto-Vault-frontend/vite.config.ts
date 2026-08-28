@@ -8,8 +8,8 @@ export default defineConfig({
   plugins: [react(), tailwindcss(), VitePWA({
     registerType: 'autoUpdate',
     manifest: {
-      name: 'Veridian Token Time-Lock Vault',
-      short_name: 'Veridian',
+      name: 'Crypto-Vault Token Time-Lock Vault',
+      short_name: 'Crypto-Vault',
       description: 'Non-custodial blockchain time-lock vaults.',
       display: 'standalone',
       start_url: '/',

@@ -22,6 +22,7 @@ export const Header: React.FC = () => {
     setActiveTab,
     wallet,
     connectWallet,
+    connectMetaMaskMobile,
     disconnectWallet,
     switchNetwork,
     setIsCreateModalOpen,
@@ -35,6 +36,7 @@ export const Header: React.FC = () => {
 
   const [isWalletMenuOpen, setIsWalletMenuOpen] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [isWalletChooserOpen, setIsWalletChooserOpen] = useState(false);
 
   const handleCopyAddress = () => {
     if (!wallet.address) return;
@@ -258,7 +260,7 @@ export const Header: React.FC = () => {
             ) : (
               <button
                 id="connect-wallet-btn"
-                onClick={connectWallet}
+                onClick={() => setIsWalletChooserOpen(true)}
                 className="bg-[#2C332B] hover:bg-black text-white font-medium text-xs px-4 py-2 rounded-lg active:scale-95 transition-all shadow-sm flex items-center gap-1.5"
               >
                 <Wallet className="w-4 h-4" />
@@ -268,6 +270,23 @@ export const Header: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {isWalletChooserOpen && !wallet.isConnected && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-black/40 backdrop-blur-xs" onClick={() => setIsWalletChooserOpen(false)} />
+          <div className="relative z-10 w-full max-w-sm rounded-2xl bg-white border border-[#E2E1D8] shadow-2xl p-5 text-[#3A3D39]">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-display text-base font-bold text-[#2C332B]">Connect Wallet</h2>
+              <button aria-label="Close wallet selection" onClick={() => setIsWalletChooserOpen(false)} className="text-[#7A7E78] text-xl">&times;</button>
+            </div>
+            <button type="button" onClick={() => { setIsWalletChooserOpen(false); void connectMetaMaskMobile(); }} className="w-full flex items-center gap-3 rounded-xl border border-[#E2E1D8] bg-[#F9F9F7] px-4 py-3 text-left hover:border-[#7D8C7B]">
+              <Wallet className="w-5 h-5 text-[#7D8C7B]" />
+              <span className="text-sm font-semibold text-[#2C332B]">MetaMask</span>
+            </button>
+            <button type="button" onClick={() => { setIsWalletChooserOpen(false); void connectWallet(); }} className="mt-2 w-full rounded-xl border border-[#E2E1D8] px-4 py-3 text-xs font-semibold text-[#7A7E78] hover:text-[#2C332B]">Use an injected wallet</button>
+          </div>
+        </div>
+      )}
 
       {/* Mobile Sub-Navigation */}
       <div className="flex md:hidden border-t border-[#E2E1D8] px-4 overflow-x-auto bg-[#F9F9F7]">

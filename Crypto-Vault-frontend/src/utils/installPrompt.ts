@@ -37,11 +37,13 @@ export function useInstallPrompt() {
   }, []);
 
   const install = async () => {
-    if (!installEvent) return false;
-    await installEvent.prompt();
-    const choice = await installEvent.userChoice;
+    if (!installEvent || isInstalled) return false;
+    const promptEvent = installEvent;
     setInstallEvent(null);
-    if (choice.outcome === 'accepted') setInstallRequested(true);
+    await promptEvent.prompt();
+    const choice = await promptEvent.userChoice;
+    setInstallRequested(choice.outcome === 'accepted');
+    if (choice.outcome === 'accepted') setIsInstalled(isStandalone());
     return choice.outcome === 'accepted';
   };
 

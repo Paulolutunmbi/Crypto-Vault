@@ -22,7 +22,7 @@ import {
 } from '../config/contracts';
 import { readableError } from '../utils/readableError';
 import { detectToken as detectErc20Token } from '../utils/tokenDetection';
-import { getWalletProvider } from '../utils/walletProvider';
+import { connectMetaMaskMobile, getWalletProvider } from '../utils/walletProvider';
 
 interface ToastState {
   id: string;
@@ -42,6 +42,7 @@ interface TimelockContextType {
   setActiveTab: (tab: 'dashboard' | 'vaults' | 'governance' | 'docs' | 'test-tokens') => void;
   wallet: WalletState;
   connectWallet: () => Promise<void>;
+  connectMetaMaskMobile: () => Promise<void>;
   disconnectWallet: () => void;
   switchNetwork: (network: NetworkConfig) => Promise<void>;
   tokens: TokenInfo[];
@@ -311,18 +312,32 @@ export const TimelockProvider: React.FC<{ children: ReactNode }> = ({ children }
   };
 
   const connectWallet = async () => {
-    if (!getWalletProvider()) {
-      addToast({ type: 'error', ...readableError(new Error('Wallet not installed'), 'connect') });
-      return;
-    }
-
     try {
-      const provider = getProvider()!;
+      const provider = getProvider();
+      if (!provider) throw new Error('wallet unavailable');
       const accounts = (await provider.send('eth_requestAccounts', [])) as string[];
       if (!accounts[0]) return;
       localStorage.removeItem(DISCONNECTED_KEY);
       await handleChain(accounts[0]);
       addToast({ type: 'success', title: 'Wallet Connected', message: `Connected to ${accounts[0].slice(0, 6)}...${accounts[0].slice(-4)}` });
+    } catch (error) {
+      addToast({ type: 'error', ...readableError(error, 'connect') });
+    }
+  };
+
+  const connectMetaMaskMobileWallet = async () => {
+    try {
+      if (getWalletProvider()) {
+        await connectWallet();
+        return;
+      }
+      await connectMetaMaskMobile();
+      const provider = getProvider();
+      if (!provider) throw new Error('wallet unavailable');
+      const accounts = (await provider.send('eth_accounts', [])) as string[];
+      if (!accounts[0]) throw new Error('wallet connection failed');
+      localStorage.removeItem(DISCONNECTED_KEY);
+      await handleChain(accounts[0]);
     } catch (error) {
       addToast({ type: 'error', ...readableError(error, 'connect') });
     }
@@ -623,6 +638,7 @@ export const TimelockProvider: React.FC<{ children: ReactNode }> = ({ children }
         setActiveTab,
         wallet,
         connectWallet,
+        connectMetaMaskMobile: connectMetaMaskMobileWallet,
         disconnectWallet,
         switchNetwork,
         tokens,
