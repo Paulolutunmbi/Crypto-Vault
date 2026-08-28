@@ -18,9 +18,14 @@ export function useInstallPrompt() {
   const [isIos] = useState(isIosDevice);
 
   useEffect(() => {
+    const updateInstalledState = () => {
+      if (isStandalone()) setIsInstalled(true);
+    };
     const handleBeforeInstallPrompt = (event: Event) => {
       event.preventDefault();
+      if (isStandalone()) return;
       setInstallEvent(event as BeforeInstallPromptEvent);
+      setInstallRequested(false);
     };
     const handleInstalled = () => {
       setInstallEvent(null);
@@ -30,9 +35,13 @@ export function useInstallPrompt() {
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     window.addEventListener('appinstalled', handleInstalled);
+    window.addEventListener('pageshow', updateInstalledState);
+    document.addEventListener('visibilitychange', updateInstalledState);
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
       window.removeEventListener('appinstalled', handleInstalled);
+      window.removeEventListener('pageshow', updateInstalledState);
+      document.removeEventListener('visibilitychange', updateInstalledState);
     };
   }, []);
 
@@ -40,11 +49,16 @@ export function useInstallPrompt() {
     if (!installEvent || isInstalled) return false;
     const promptEvent = installEvent;
     setInstallEvent(null);
-    await promptEvent.prompt();
-    const choice = await promptEvent.userChoice;
-    setInstallRequested(choice.outcome === 'accepted');
-    if (choice.outcome === 'accepted') setIsInstalled(isStandalone());
-    return choice.outcome === 'accepted';
+    try {
+      await promptEvent.prompt();
+      const choice = await promptEvent.userChoice;
+      setInstallRequested(choice.outcome === 'accepted');
+      if (choice.outcome === 'accepted' && isStandalone()) setIsInstalled(true);
+      return choice.outcome === 'accepted';
+    } catch {
+      setInstallRequested(false);
+      return false;
+    }
   };
 
   return {
