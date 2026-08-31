@@ -12,8 +12,11 @@ interface InstallState {
 
 const standaloneQuery = '(display-mode: standalone)';
 
-const isStandalone = () => window.matchMedia(standaloneQuery).matches
-  || Boolean((navigator as Navigator & { standalone?: boolean }).standalone);
+const isStandalone = () => {
+  if (typeof window === 'undefined') return false;
+  return window.matchMedia(standaloneQuery).matches
+    || Boolean((navigator as Navigator & { standalone?: boolean }).standalone);
+};
 
 const initialState: InstallState = {
   event: null,
@@ -22,6 +25,7 @@ const initialState: InstallState = {
 
 let state = initialState;
 const listeners = new Set<() => void>();
+let listenersAttached = false;
 
 const notify = () => listeners.forEach(listener => listener());
 
@@ -38,15 +42,35 @@ const handleBeforeInstallPrompt = (event: Event) => {
 
 const handleInstalled = () => updateState({ event: null, isInstalled: true });
 
-window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-window.addEventListener('appinstalled', handleInstalled);
-
 const refreshInstalledState = () => {
   if (isStandalone()) updateState({ event: null, isInstalled: true });
 };
 
-window.addEventListener('pageshow', refreshInstalledState);
-document.addEventListener('visibilitychange', refreshInstalledState);
+export function attachInstallPromptListeners() {
+  if (typeof window === 'undefined' || typeof document === 'undefined') return;
+  if (listenersAttached) return;
+
+  window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+  window.addEventListener('appinstalled', handleInstalled);
+  window.addEventListener('pageshow', refreshInstalledState);
+  document.addEventListener('visibilitychange', refreshInstalledState);
+
+  listenersAttached = true;
+}
+
+export function detachInstallPromptListeners() {
+  if (typeof window === 'undefined' || typeof document === 'undefined') return;
+  if (!listenersAttached) return;
+
+  window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+  window.removeEventListener('appinstalled', handleInstalled);
+  window.removeEventListener('pageshow', refreshInstalledState);
+  document.removeEventListener('visibilitychange', refreshInstalledState);
+
+  listenersAttached = false;
+}
+
+attachInstallPromptListeners();
 
 const isIosDevice = () => /iPad|iPhone|iPod/.test(navigator.userAgent)
   || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
